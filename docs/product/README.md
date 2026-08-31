@@ -1,19 +1,23 @@
-# Product Documentation
+# Product Requirements
 
-This directory defines what Nexo is being built to accomplish.
+This directory contains the functional and business requirements for Nexo.
 
-It contains:
+Requirements define **what the system must do**, not how the system should
+implement it.
 
-- Product Vision
-- Problem Statement
-- Personas
-- Goals and Non-Goals
-- Scope
-- Product requirements
-- Product-level decisions
+## Requirement hierarchy
 
-Product documentation defines the desired behavior and boundaries of the
-product.
-
-It does not prescribe implementation details unless a technical constraint
-is itself part of the product requirement.
+```text
+Product Vision
+      ↓
+Scope
+      ↓
+Requirements
+      ↓
+Epics
+      ↓
+Stories
+      ↓
+Tasks
+      ↓
+Implementation
