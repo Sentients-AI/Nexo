@@ -1,0 +1,47 @@
+name: Task
+description: An implementation task required by a story or technical initiative.
+title: "[Task]: "
+labels:
+  - type:task
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: Parent Issue
+      description: The story or epic this task belongs to.
+      placeholder: "#42"
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What needs to be implemented?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is included in this task?
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Notes
+      description: Relevant implementation considerations.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Completion Checklist
+      options:
+        - label: Tests added or updated
+        - label: Documentation updated if required
+        - label: No unrelated changes

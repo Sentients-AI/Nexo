@@ -1,0 +1,45 @@
+name: Feature
+description: Propose a new product capability for consideration.
+title: "[Feature]: "
+labels:
+  - type:feature
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or business problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the proposed capability without prescribing implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: users
+    attributes:
+      label: Affected Users
+      description: Which personas are affected?
+    validations:
+      required: true
+
+  - type: textarea
+    id: success
+    attributes:
+      label: Success Criteria
+      description: How will we know this feature is successful?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope Considerations
+      description: Explain whether this belongs to Core, Extended, Experimental, or Deferred scope.
+    validations:
+      required: true

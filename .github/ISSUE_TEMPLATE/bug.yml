@@ -1,0 +1,56 @@
+name: Bug
+description: Report behaviour that violates an existing requirement or expected behaviour.
+title: "[Bug]: "
+labels:
+  - type:bug
+body:
+  - type: input
+    id: requirement
+    attributes:
+      label: Related Requirement
+      description: Requirement or expected behaviour that is being violated.
+      placeholder: "REQ-CART-003"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        PHP:
+        Laravel:
+        Database:
+        Browser:
+        Commit:
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, screenshots, stack traces, or relevant observations.
+    validations:
+      required: false

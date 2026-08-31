@@ -1,0 +1,90 @@
+name: Story
+description: A user-facing capability derived from an approved requirement.
+title: "[Story]: "
+labels:
+  - type:story
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before opening
+
+        Make sure this story has a clear product requirement behind it.
+        Do not use this form for implementation-only work.
+
+  - type: input
+    id: requirement
+    attributes:
+      label: Requirement
+      description: The requirement ID this story implements.
+      placeholder: "REQ-CHECKOUT-001"
+    validations:
+      required: true
+
+  - type: textarea
+    id: story
+    attributes:
+      label: User Story
+      description: Describe the capability from the user's perspective.
+      placeholder: |
+        As a ...
+        I want ...
+        So that ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Explain the business context and why this matters.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Define observable behaviour that must be true when this story is complete.
+      placeholder: |
+        - Given ...
+          When ...
+          Then ...
+
+        - Given ...
+          When ...
+          Then ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: rules
+    attributes:
+      label: Business Rules
+      description: Important domain rules or constraints.
+    validations:
+      required: false
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of Scope
+      description: Explicitly state what this story does not include.
+    validations:
+      required: false
+
+  - type: textarea
+    id: technical_notes
+    attributes:
+      label: Technical Notes
+      description: Relevant technical constraints or existing architecture.
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Other issues, ADRs, migrations, or external dependencies.
+    validations:
+      required: false
