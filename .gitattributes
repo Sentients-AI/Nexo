@@ -1,0 +1,11 @@
+* text=auto eol=lf
+
+*.php text diff=php
+*.js text
+*.ts text
+*.vue text
+*.json text
+*.md text
+*.yml text
+*.yaml text
+*.env.example text
