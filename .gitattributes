@@ -1,5 +1,9 @@
 * text=auto eol=lf
 
+/.github export-ignore
+CHANGELOG.md export-ignore
+.styleci.yml export-ignore
+
 *.php text diff=php
 *.js text
 *.ts text
@@ -9,3 +13,7 @@
 *.yml text
 *.yaml text
 *.env.example text
+*.blade.php diff=html
+*.css diff=css
+*.html diff=html
+*.md diff=markdown
