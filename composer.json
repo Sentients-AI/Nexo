@@ -12,13 +12,15 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.11",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^5.1",
-        "pestphp/pest-plugin-laravel": "^5.0"
+        "pestphp/pest-plugin-laravel": "^5.0",
+        "phpstan/phpstan": "^2.2"
     },
     "autoload": {
         "psr-4": {
@@ -45,9 +47,25 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
+        "lint": [
+            "pint"
+        ],
+        "test:lint": [
+            "pint --test"
+        ],
+        "analyse": [
+            "phpstan analyse"
+        ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
+        ],
+        "check": [
+            "@composer validate --strict",
+            "@composer audit",
+            "@test:lint",
+            "@analyse",
+            "@test"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

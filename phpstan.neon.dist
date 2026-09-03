@@ -1,0 +1,18 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+
+    # Application and project code. Test files are covered by Pest's own
+    # architecture tests (tests/Unit/ArchTest.php) and Pint; Pest's functional
+    # test API is not statically analysable by PHPStan without full Pest support.
+    paths:
+        - app
+        - bootstrap/app.php
+        - config
+        - database
+        - routes
+        - public/index.php
+
+    tmpDir: build/phpstan
