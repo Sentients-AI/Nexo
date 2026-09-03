@@ -1,61 +1,50 @@
 # Contributing to Nexo
 
-Thank you for contributing to Nexo.
-
 Nexo follows an issue-driven, pull-request-based development workflow.
 
-## Before You Start
+## Before you start
 
-1. Read the relevant product documentation.
+1. Read the relevant [product documentation](docs/product/).
 2. Check existing issues before creating duplicate work.
-3. For architectural changes, review the relevant ADRs.
-4. For non-trivial work, create or update an issue before implementation.
+3. For architectural changes, review the [ADRs](docs/architecture/adr/).
+4. For non-trivial work, create or update an issue before implementation. See
+   [`docs/engineering/issue-workflow.md`](docs/engineering/issue-workflow.md).
 
-## Development Workflow
+## Development workflow
 
 ```text
-Issue
-  ↓
-Implementation plan
-  ↓
-Branch
-  ↓
-Implementation
-  ↓
-Tests
-  ↓
-Pull Request
-  ↓
-Review
-  ↓
-CI
-  ↓
-Merge
+Issue  →  branch (from main)  →  implementation  →  tests  →  Pint  →  PHPStan
+      →  Pull Request  →  CI  →  review  →  squash merge  →  main
 ```
-Branches
 
-The default branch is main.
+- The default branch is `main`. Feature work happens on a short-lived branch and
+  is never committed directly to `main`.
+- Keep pull requests small and focused. Do not mix unrelated refactoring or
+  dependency bumps into a feature PR.
+- Run `composer check` before opening a PR — it runs the same gates as CI
+  (`composer validate --strict`, `composer audit`, Pint, PHPStan, Pest).
 
-Feature work must be performed on a dedicated branch.
+The full policy is in [`docs/engineering/git-workflow.md`](docs/engineering/git-workflow.md).
 
-See docs/engineering/ for the complete engineering operating model.
-
-Pull Requests
+## Pull requests
 
 Every pull request must:
 
-explain the problem being solved;
-describe the solution;
-include relevant tests;
-identify architectural consequences;
-document unresolved concerns;
-pass required CI checks.
-Questions
+- explain the problem being solved and the approach taken;
+- include relevant tests (a bug fix includes a regression test);
+- identify any architectural or data-isolation consequences, and link an ADR if
+  the change is boundary-shaping;
+- note unresolved concerns for the reviewer;
+- pass all required CI checks.
 
-If you are unsure whether a change requires an ADR, architectural review,
-or additional tests, raise the question before implementation.
+`main` requires a passing CI run and at least one approval; PRs are squash-merged.
 
+## Definition of Done
 
-We'll expand this when we create the actual engineering operating model.
+Before requesting review, check your change against
+[`docs/engineering/definition-of-done.md`](docs/engineering/definition-of-done.md).
 
----
+## Questions
+
+If you are unsure whether a change requires an ADR, architectural review, or
+additional tests, raise the question on the issue before implementation.

@@ -1,58 +1,143 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Nexo
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Nexo** is the commerce engine powering **aljebal-albeedos (الجبل الأبيض)** — a
+single Arabic-first online marketplace where many independent vendors sell
+through one storefront. Customers shop across vendors in one cart and pay once;
+the platform splits each purchase into per-vendor orders, retains a commission,
+and settles vendors.
 
-## About Laravel
+Nexo is infrastructure. There is exactly one marketplace running on it. See
+[`docs/product/vision.md`](docs/product/vision.md) for the full product framing
+and [`docs/architecture/marketplace-migration.md`](docs/architecture/marketplace-migration.md)
+for where the codebase is headed.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+> **Status:** foundation. The marketplace business capabilities (vendor
+> onboarding, catalog, split checkout, payments) are not built yet — see the
+> migration plan for the sequenced phases.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| | |
+|--|--|
+| Language  | PHP 8.5 |
+| Framework | Laravel 13 |
+| Database  | MySQL / MariaDB (dev & prod); SQLite in-memory (tests) |
+| Tests     | Pest 5 |
+| Formatting | Laravel Pint |
+| Static analysis | PHPStan + Larastan (level 6) |
+| CI | GitHub Actions |
 
-## Learning Laravel
+## Prerequisites
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- PHP **8.5** with the standard Laravel extensions (`mbstring`, `pdo`,
+  `pdo_mysql` / `pdo_sqlite`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`,
+  `bcmath`, `fileinfo`)
+- [Composer](https://getcomposer.org/) 2
+- MySQL or MariaDB (local marketplace database)
+- Node.js 20+ and npm (front-end assets)
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Setup
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+```sh
+git clone https://github.com/Sentients-AI/Nexo.git
+cd Nexo
 
-## Agentic Development
+composer install
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Database
+
+Create the database referenced by `.env` (`nexo` by default), set
+`DB_USERNAME` / `DB_PASSWORD` to your local credentials, then:
+
+```sh
+php artisan migrate
+```
+
+The test suite does **not** use this database — it runs against in-memory SQLite
+(see `phpunit.xml`), so no test database setup is required.
+
+### Front-end assets
+
+```sh
+npm install
+npm run build      # or: npm run dev
+```
+
+### One-shot
+
+```sh
+composer setup     # install, .env, key:generate, migrate, npm install, npm build
+```
+
+## Running the quality gate
+
+Run this before opening a pull request — it is exactly what CI enforces:
+
+```sh
+composer check
+```
+
+Individually:
+
+```sh
+composer lint          # Laravel Pint — format in place
+composer test:lint     # Pint — check only
+composer analyse       # PHPStan + Larastan
+composer test          # Pest
+```
+
+Local development server:
+
+```sh
+composer dev           # server + queue + logs + vite
+# or
+php artisan serve
+```
+
+## Documentation
+
+| | |
+|--|--|
+| Product vision, scope, requirements | [`docs/product/`](docs/product/) |
+| Architecture, invariants, ADRs | [`docs/architecture/`](docs/architecture/) |
+| Engineering standards & process | [`docs/engineering/`](docs/engineering/) |
+| Local development guidance | [`docs/development/`](docs/development/) |
+| Full documentation index | [`docs/README.md`](docs/README.md) |
+
+Key engineering docs:
+
+- [Testing conventions](docs/engineering/testing.md)
+- [Code quality & tooling](docs/engineering/code-quality.md)
+- [Git workflow](docs/engineering/git-workflow.md)
+- [Issue workflow](docs/engineering/issue-workflow.md)
+- [Definition of Done](docs/engineering/definition-of-done.md)
+- [Architecture guidelines](docs/engineering/architecture-guidelines.md)
+- [Database conventions](docs/engineering/database.md)
+- [Error handling & logging](docs/engineering/error-handling.md)
+- [Security baseline](docs/engineering/security.md)
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Nexo uses an issue-driven, short-lived-branch, pull-request workflow. `main` is
+protected: PRs require a passing CI run and one approval, and are squash-merged.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) and
+[`docs/engineering/git-workflow.md`](docs/engineering/git-workflow.md).
 
-## Code of Conduct
+## Domain naming note
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Per [ADR-0002](docs/architecture/adr/0002-vendor-is-a-tenant-record.md), the code
+uses `tenant` / `Tenant` / `tenant_id` for what the product calls a **vendor**.
+Same concept; a future ADR decides whether to rename.
 
-## Security Vulnerabilities
+## Security
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+This repository is public. Never commit secrets. Report vulnerabilities
+privately — see [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT — see [`LICENSE`](LICENSE).
