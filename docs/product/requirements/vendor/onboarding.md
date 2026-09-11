@@ -4,11 +4,17 @@
 
 ### REQ-VENDOR-001 — Vendor Application
 
-The system shall provide an application boundary through which a prospective Vendor can be created as a Vendor record.
+The system shall provide an application boundary through which a prospective Vendor may submit an application for consideration by the Platform Operator. Submitting an application shall not directly create a Vendor record. A Vendor record shall only be created through the platform's controlled Vendor creation boundary after the application has been reviewed.
+
+### REQ-VENDOR-001A — Rejected Vendor Application
+
+The system shall allow the Platform Operator to reject a Vendor application without creating a Vendor record. A rejected application shall not result in a Vendor becoming eligible to operate.
+
 
 ### REQ-VENDOR-002 — Vendor Identity
 
-The system shall assign each Vendor a stable unique internal identifier and a unique public slug.
+The system shall assign each Vendor a stable unique internal identifier and a unique public slug. The slug shall remain unchanged during the Vendor's normal lifecycle, including approval, suspension, and reactivation.
+
 
 ### REQ-VENDOR-003 — Vendor Pending State
 
