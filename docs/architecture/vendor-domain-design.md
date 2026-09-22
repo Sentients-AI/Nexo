@@ -74,19 +74,21 @@ A Vendor should not be physically deleted as part of a normal lifecycle transiti
 
 ## 5. Who May Manage a Vendor?
 
-Vendor creation and lifecycle management should be controlled by the Platform Operator through the platform's Vendor management boundary. A prospective Vendor may submit an application, but submitting an application does not create a Vendor record directly.
+Vendor lifecycle management should be performed by the Platform Operator. The Platform Operator is responsible for reviewing Vendor applications, creating Vendor records, approving Vendors, and suspending Vendors.
 
-After reviewing the application, the Platform Operator may create a Vendor record through the controlled Vendor creation boundary. A newly created Vendor record has a `pending` status and must be approved before it becomes eligible to operate. If the application is rejected, no Vendor record is created.
+### Vendor Creation
 
+A prospective seller submits an application before a Vendor record exists. Submitting an application does not directly create a Vendor record.
 
-Vendor lifecycle management should be performed by the Platform Operator. The Platform Operator is responsible for approving and suspending Vendors.
+The Platform Operator reviews the application. If the application is accepted, the Platform Operator explicitly creates the Vendor through the Vendor management boundary.
 
-Vendor-team users belong to exactly one Vendor and may manage vendor-specific operational activities within their permitted scope, but they should not create Vendors or control the Vendor's platform-level lifecycle.
+The `pending` state begins when the Vendor record is created. A newly created Vendor starts as `pending` and must then be explicitly approved through the defined lifecycle transition before it can operate.
+
+Vendor-team users belong to exactly one Vendor and may manage vendor-specific operational activities within their permitted scope, but they should not control the Vendor's platform-level lifecycle.
 
 Although authentication and authorization are outside the scope of this task, the design should establish an explicit application boundary for Vendor management. Later, authorization rules can enforce that only authorized Platform Operators can execute lifecycle-changing operations.
 
-This separation ensures that Vendor creation and lifecycle changes are controlled by the marketplace platform rather than by individual Vendor users.
-
+This separation ensures that Vendor lifecycle changes are controlled by the marketplace platform rather than by individual Vendor users.
 
 ## 6. Vendor Invariants
 
@@ -135,16 +137,28 @@ Using both layers provides stronger protection: the database protects structural
 
 ## 8. Meaning of Suspended and Non-Active States
 
-A `suspended` Vendor remains a valid Vendor in the marketplace but is temporarily prevented from operating. Suspension does not remove the Vendor's identity or historical data.
+A `suspended` Vendor remains a valid Vendor in the marketplace but is temporarily prevented from starting new marketplace activity. Suspension does not remove the Vendor's identity or historical data.
 
-A `pending` Vendor has not yet been approved by the Platform Operator and is not eligible to operate.
+A `pending` Vendor has not yet been approved by the Platform Operator and therefore cannot operate as an approved seller.
 
-An `approved` Vendor is eligible to operate, subject to other explicitly required marketplace conditions such as payment onboarding.
+An `approved` Vendor is eligible to operate, subject to other marketplace conditions such as required payment onboarding.
 
-A `suspended` Vendor must not perform normal seller operations that would create new marketplace activity. This includes offering products for sale, accepting new marketplace orders, and other Vendor operations that require an operating Vendor status. Suspension does not prevent access to historical records that are required for order history, auditing, or platform administration.
+### Suspended Vendor Permissions
 
-Operating eligibility should therefore be derived from the Vendor's lifecycle status and other explicitly defined marketplace conditions rather than from a separate `is_active` field.
+A suspended Vendor remains able to access historical information and complete existing operational obligations, but cannot perform new selling activities.
 
+| Action | Suspended Vendor |
+|---|---|
+| View historical orders | Allowed |
+| Fulfill existing orders | Allowed |
+| View historical earnings | Allowed |
+| Edit existing products | Blocked |
+| Create new products | Blocked |
+| Receive new orders | Blocked |
+
+A suspended Vendor remains identifiable and its historical records are preserved. Suspension blocks new marketplace activity without removing existing historical data or obligations.
+
+Operating ability should therefore be derived from the Vendor's lifecycle status and other explicitly defined marketplace conditions rather than from a separate `is_active` field.
 ## 9. Proposed Vendor Schema
 
 The proposed Vendor schema contains only fields required for Vendor identity, lifecycle, and core platform management.
