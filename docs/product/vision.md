@@ -1,5 +1,7 @@
 # Product Vision
 
+> **Superseded 2026-11-01** by [ADR-0007](../architecture/adr/0007-product-positioning-currency-and-locales.md) (owner decision D-4) and the Nexo 2.0 product documents: [product-requirements.md](../product/product-requirements.md), [functional-requirements.md](../product/functional-requirements.md). Kept for history only; do not implement from this file.
+
 **Status:** Ratified 2026-08-30 · Owner: Platform Operator
 **Supersedes:** the "generic multi-tenant e-commerce SaaS" framing used in `README.md`
 and `docs/COMPREHENSIVE_CODEBASE_GUIDE.md` prior to 2026-08-30.

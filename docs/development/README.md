@@ -20,6 +20,7 @@ is in the repository [`README.md`](../../README.md). Start there.
 
 ## Domain naming note
 
-Per [ADR-0002](../architecture/adr/0002-vendor-is-a-tenant-record.md), the code
-says `tenant` / `Tenant` / `tenant_id` where the product language says
-**vendor**. They are the same concept. A future ADR decides whether to rename.
+Nexo 2.0 uses **Vendor** in code, schema and UI (`vendors`, `vendor_id`), per
+[ADR-0005](../architecture/adr/ADR-0005-vendor-naming.md) (recommended for acceptance in the
+Phase 1 review). ADR-0002's `tenant` naming applied to the legacy SaaS database and is proposed
+to be marked superseded.
