@@ -1,5 +1,7 @@
 # Problem Statement
 
+> **Superseded 2026-11-01** by [ADR-0007](../architecture/adr/0007-product-positioning-currency-and-locales.md) (owner decision D-4) and [product-requirements.md](product-requirements.md). Kept for history only.
+
 **Status:** Ratified 2026-08-30
 
 ---
