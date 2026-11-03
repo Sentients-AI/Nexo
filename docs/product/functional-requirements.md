@@ -16,7 +16,7 @@
 
 | ID | P | Requirement | Acceptance criteria |
 |---|---|---|---|
-| FR-ID-01 | M | Visitors can register with name, email and password, and must verify their email before checkout | Unverified users are redirected to verification when they reach checkout; the verification link is signed and expires in 60 minutes |
+| FR-ID-01 | M | Visitors can register with name, email and password, on the registration page or inline during checkout (P-1). The email must be verified before an order can be placed. A signed-in, unverified customer can request a new verification email. | **Registration:** both entry points apply the same validation and password rules (security-model §6). Success creates a customer account, signs the customer in, merges the guest cart (FR-CART-02) and sends one verification email. Inline registration returns the customer to checkout, not to a separate page.<br>**Verification:** the link is signed and expires in 60 minutes. Following a valid link marks the email verified. Following an expired or invalid link changes nothing; the page explains why and offers a resend.<br>**Resend:** available to a signed-in, unverified customer from the checkout verification prompt and from the account area. It is rate-limited (NFR-SEC-04). An already-verified customer is not sent another email.<br>**Enforcement:** an unverified customer cannot submit an order or initiate a payment (FR-CHK-01). |
 | FR-ID-02 | M | Login, logout, password reset, with rate limiting | Login is throttled to 5 attempts per minute per email+IP; reset tokens are single-use and expire |
 | FR-ID-03 | M | Customers manage profile and address book (Malaysian address format, zone derived from state) | Address state determines the shipping zone; at most one default address |
 | FR-ID-04 | M | Platform staff accounts are created by an Admin, require 2FA, and cannot register publicly | A staff login without 2FA confirmation cannot reach `/admin` |
@@ -78,7 +78,7 @@
 | ID | P | Requirement | Acceptance criteria |
 |---|---|---|---|
 | FR-CART-01 | M | Visitors and customers add variants from any number of vendors to one cart, grouped by vendor in the UI | |
-| FR-CART-02 | M | A guest cart merges into the customer cart at login (quantities summed, capped at available) | Merge is idempotent |
+| FR-CART-02 | M | A guest cart merges into the customer cart at login, including the automatic sign-in after registration (quantities summed, capped at available) | Merge is idempotent; after inline registration at checkout, the merged cart is the one shown in checkout |
 | FR-CART-03 | M | The cart revalidates on view: price changes, unavailable items and quantity above available are flagged, and checkout is blocked until acknowledged | |
 | FR-CART-04 | M | Quantity per line is limited to 1–20 (configurable) and to available stock | |
 | FR-CART-05 | M | A cart is owned by exactly one session or customer; no endpoint accepts a cart id from the client | Test: another user's cart cannot be read or checked out |
@@ -87,7 +87,7 @@
 
 | ID | P | Requirement | Acceptance criteria |
 |---|---|---|---|
-| FR-CHK-01 | M | Checkout requires a verified customer account (P-1) | |
+| FR-CHK-01 | M | Placing an order requires a signed-in customer whose email is verified (P-1). Guests can start checkout only by signing in or registering inline. Unverified customers are prompted to verify, and resume checkout once verified. | **Guest:** starting checkout offers sign-in or inline registration. The guest cart is kept and merged on sign-in (FR-CART-02).<br>**Unverified customer:** checkout shows that verification is required, with a resend action (FR-ID-01), and the place-order action is unavailable.<br>**Server enforcement:** a place-order request (ADR-0015 step 1) or a payment-attempt request (step 2) from a guest or an unverified account is rejected before any write. No OrderGroup, reservation, promotion redemption, points hold or payment attempt is created, and nothing is charged. This holds even if the UI is bypassed (for example a stale tab or a direct request).<br>**Resume:** after following a valid verification link, the customer returns to checkout with the same cart. If the link is opened on another device, the email is still verified. The original device, still signed in, can then place the order with the same cart. Any device the customer signs in on shows the same cart, because the cart belongs to the account.<br>**Reservation:** no stock is reserved before placement, so time spent registering or verifying never uses up a reservation (FR-INV-03). |
 | FR-CHK-02 | M | The customer selects a shipping address; the system quotes shipping per vendor and shows a breakdown per vendor and in total | |
 | FR-CHK-03 | M | The customer may apply one coupon and redeem points; the system shows the allocation as a total discount | Invalid coupons give a reason code |
 | FR-CHK-04 | M | Placing the order re-prices server-side; if the total differs from the confirmed total, nothing is charged and the customer reviews again | 409 test |

@@ -80,7 +80,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
    - shipping rates;
    - team;
    - notifications.
-3. **Platform administration** (`/admin`, Filament). Covers:
+3. **Platform administration** (`/admin`, Filament, English-only, platform staff only; ADR-0020, accepted). Covers:
    - vendor applications and vendors;
    - catalogue taxonomy and moderation;
    - orders and returns arbitration;
@@ -99,7 +99,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 
 | Area | Notes |
 |---|---|
-| Identity | Registration, login, email verification, password reset, profile, address book; staff 2FA |
+| Identity | Registration (on its own page or inline during checkout), login, email verification with resend, password reset, profile, address book; staff 2FA |
 | Vendor onboarding | Application → platform review → vendor created (pending) → approved; suspension and reactivation |
 | Vendor team | Invite members with roles; one vendor per user |
 | Catalogue | Platform-owned category tree and attribute definitions; vendor products with variants (option combinations), images, descriptions; product status (draft, active, inactive); platform moderation (block or unblock) |
@@ -107,7 +107,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 | Inventory | On-hand and reserved per variant; reservations with TTL; adjustments; movement history; low-stock indicator |
 | Shipping | Per-vendor flat rates by zone (Peninsular Malaysia, East Malaysia); per-vendor free-shipping threshold; manual carrier and tracking entry |
 | Cart | Guest and customer cart, multi-vendor, grouped by vendor; merged on login; stock and price revalidation |
-| Checkout | Account required; address; per-vendor shipping; coupon; points redemption; single card payment (Stripe test mode, 3-D Secure) |
+| Checkout | Signed-in account with a verified email required to place an order (P-1); inline registration; address; per-vendor shipping; coupon; points redemption; single card payment (Stripe test mode, 3-D Secure) |
 | Orders | OrderGroup + VendorOrders; customer timeline per vendor; vendor fulfilment states; cancellation rules |
 | Returns and refunds | Customer return requests per VendorOrder line; vendor decision; platform arbitration; partial and full refunds; refunds tracked per VendorOrder |
 | Disputes | Ingest provider disputes (test mode), hold vendor funds, record evidence, record the outcome |
@@ -118,7 +118,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 | Wishlist and store follow | Customer wishlist; follow vendor stores; followed-store feed on the account page |
 | Notifications | Database (in-app) and email for order, return, refund, payout and application events |
 | Search | Full-text search with facets: category, price, vendor, rating, in stock. MySQL-backed (ADR-0019) |
-| i18n | `en` (primary), `ar` (RTL), `ms` for all UI. Platform taxonomy translated. Vendor-entered content is single-language. |
+| i18n | `en` (primary), `ar` (RTL), `ms` for all storefront and vendor dashboard UI. The platform admin is English-only in v2 (ADR-0020). Platform taxonomy translated. Vendor-entered content is single-language. |
 | Demo | Reproducible seeded environment with role logins |
 
 ### 6.2 Out of scope for v2 (with reason)
@@ -141,7 +141,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 
 | ID | Proposal | Rationale |
 |---|---|---|
-| P-1 | Checkout requires an account (inline sign-up on the checkout page); guest browsing and cart allowed | Removes guest-ownership bugs; simpler order access |
+| P-1 | **Approved by the owner, 2026-11-04.** The rules:<br>(a) Visitors may browse and search without an account.<br>(b) Visitors may keep a guest cart. It merges into the customer's cart at sign-in, including the automatic sign-in that follows registration (FR-CART-02).<br>(c) Placing an order requires a signed-in customer account; there is no guest checkout.<br>(d) New customers can register inline on the checkout page, without leaving checkout.<br>(e) The account's email must be verified before the order is submitted and before any payment is initiated. Unverified customers cannot complete checkout.<br>(f) After verifying, the customer resumes checkout with the same cart.<br>See FR-ID-01, FR-CHK-01 and journey CJ-1. | Removes guest-ownership bugs and keeps order access simple. Verification happens before placement, and no stock is reserved before placement, so time spent verifying never uses up a reservation. |
 | P-2 | Vendor products publish immediately once the vendor is approved; platform moderation is reactive (block or unblock) | Pre-moderation slows demos; reactive moderation still demonstrates control |
 | P-3 | Return window of 7 days after delivery; auto-deliver 10 days after shipping when not confirmed | No carrier integration exists |
 | P-4 | Reservation TTL of 15 minutes, with one extension while payment is processing | Brief §11 |
@@ -158,7 +158,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 4. A disputed payment holds the affected vendors' funds and resolves according to the dispute rules.
 5. A weekly payout run produces simulated payouts that equal each vendor's available balance, and the ledger reconciles.
 6. Every scenario in `lifecycles/` passes on MySQL in CI, including the parallel concurrency tests.
-7. Every page works in `en`, `ar` (RTL) and `ms`; WCAG 2.2 AA checks pass on the key journeys.
+7. Every storefront and vendor dashboard page works in `en`, `ar` (RTL) and `ms` (the admin is English-only, ADR-0020); WCAG 2.2 AA checks pass on the key journeys.
 8. The demo rebuilds from an empty database with one command, and the seeded data passes the ledger invariants.
 
 ## 8. Assumptions and constraints
@@ -170,6 +170,6 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 
 ## 9. Open questions
 
-- P-1 to P-8 above.
+- P-2 to P-8 above. P-1 was approved on 2026-11-04.
 - D-9, D-10, D-11 in ADR-0016.
 - D-15: commit author identity before the repository is public.

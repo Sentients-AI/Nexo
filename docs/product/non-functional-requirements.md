@@ -60,7 +60,7 @@ These requirements are measurable. Where a target is an assumption rather than a
 
 | ID | Requirement |
 |---|---|
-| NFR-I18N-01 | en, ar and ms have 100 % key coverage for the UI; CI fails on missing keys |
+| NFR-I18N-01 | en, ar and ms have 100 % key coverage for the storefront and vendor dashboard UI; CI fails on missing keys. The platform admin is English-only in v2 (ADR-0020). |
 | NFR-I18N-02 | RTL uses CSS logical properties and direction-aware components (icons, carousels, steppers, progress); no physical `left/right` utilities in components (lint rule) |
 | NFR-I18N-03 | Currency, number and date formatting is locale-aware through `Intl`; dates display in MYT |
 | NFR-I18N-04 | Locale in the storefront URL (`/ms/...`, `/ar/...`; `en` unprefixed) for shareable links; `hreflang` alternates |

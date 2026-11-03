@@ -77,7 +77,7 @@ A `pending` vendor can manage its profile, shipping and draft products, but cann
 
 | Layer | Mechanism |
 |---|---|
-| Routing | Route groups: `storefront` (web), `account` (auth + verified), `vendor` (auth + verified + `vendor.context`), `admin` (Filament panel + 2FA), `webhooks` (signature middleware, CSRF-exempt) |
+| Routing | Route groups: `storefront` (web), `checkout` (entry step public, offering sign-in or inline registration; the place-order and payment-attempt routes need auth + verified, and the use cases re-check this, P-1 / ADR-0015 §1), `account` (auth + verified), `vendor` (auth + verified + `vendor.context`), `admin` (Filament panel + 2FA), `webhooks` (signature middleware, CSRF-exempt) |
 | Binding | Vendor routes use scoped bindings: `{vendorOrder}` resolves `where vendor_id = context`. Customer routes resolve `where customer_id = auth id`. |
 | Policies | One policy per aggregate; `before()` never grants a blanket allow, not even for Admin (Admin is granted explicitly per permission) |
 | Use cases | Accept `Actor` (user, role, vendor context, impersonator) and re-check the permission. Use cases may be called from Filament, jobs or controllers, so the check lives in the use case as well as in the controller. |

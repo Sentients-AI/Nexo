@@ -156,3 +156,46 @@ These are the significant ones, each with its reason. The trade-offs and alterna
 - [ ] Authorise (or not) committing this branch; decide D-15.
 
 **Phase 1 stops here. Phase 2 (Brand Identity and Design System) has not been started.**
+
+---
+
+## Addendum A: owner decisions for Phase 2 readiness (2026-11-04)
+
+The Phase 1 decision briefing (2026-11-03) labelled its spec inconsistencies C1–C13. **Those labels are unrelated to Phase 0's code findings C1–C6** (§7) (for example Phase 0 C1, "payments never marked paid"). Here they are written as "briefing C*n*".
+
+### A.1 Decisions recorded
+
+| Decision | Outcome | Where it is recorded |
+|---|---|---|
+| ADR-0020: Filament for platform administration | **Accepted.** `/admin` for authorised platform staff only; vendor dashboard stays Vue 3 + Inertia; Filament uses Phase 2 design tokens; the admin is English-only; Filament delegates to use cases and never mutates status or financial data directly; Laravel 13 compatibility is verified in Phase 3, with the fallback retained | ADR-0020 (status line, "Owner decision", Decision §6–§7); `architecture/README.md` ADR index |
+| P-1: account-required checkout | **Approved.** Guest browsing and guest cart are allowed; placing an order requires a signed-in account; inline registration at checkout; verified email required before order submission and payment initiation; checkout resumes after verification | PRD §6.3 P-1, §6.1; FR-ID-01, FR-CART-02, FR-CHK-01; journey CJ-1; ADR-0015 §1; security-model §5 |
+
+### A.2 Briefing C7 (P-1 inline sign-up vs FR-ID-01 email verification): resolved
+
+- **The contradiction:**
+  - P-1 promised inline sign-up on the checkout page.
+  - FR-ID-01 said unverified users are "redirected to verification" before checkout.
+  - The flow for a new customer was undefined.
+- **The resolution:** verification is a step inside checkout, not a detour out of it.
+  - Inline registration signs the customer in and merges the guest cart.
+  - Checkout then shows a verification prompt with a resend action.
+  - The existing signed, 60-minute link (FR-ID-01) marks the email verified and returns the customer to checkout with the same cart.
+  - Placement and payment-attempt requests from unverified accounts are rejected before any write, in the routes and in the use cases.
+  - Stock is reserved only at placement, so verifying never uses up a reservation.
+- **What was not changed:** the verification mechanism itself (signed link, 60-minute expiry). A one-time-code alternative was considered and not adopted.
+
+### A.3 Consistency edits that follow from ADR-0020 (briefing C13)
+
+ADR-0020 makes the admin English-only. Three statements implied translation of every page, so they are now scoped to the storefront and vendor dashboard:
+
+- PRD §6.1 (i18n row);
+- PRD §7 gate 7;
+- NFR-I18N-01.
+
+NFR-A11Y-01 was already scoped that way.
+
+### A.4 Still open
+
+- Every other §6 item: ADR-0005, ADR-0009–0019, ADR-0021, D-3, D-8–D-11, P-2–P-8, D-12 follow-up, D-13 step 3, D-15, tooling, and the React reference branch.
+- ADR-0020 relies on `platform_role` and the permission enum from ADR-0011, which is still Proposed.
+- The Phase 2 readiness items not decided here: provisional order-state vocabulary (ADR-0012), the late-payment transitions (briefing C1), and the Arabic numeral policy (ADR-0018 §3).
