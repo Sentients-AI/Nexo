@@ -1,7 +1,7 @@
 # Phase 1 Review: Product Specification and Architectural Foundation
 
 - **Date:** 2026-11-01
-- **Branch:** `docs/phase-1-specification` (worktree `C:\laragon\www\nexo-v2`, from `origin/main@1cc7b4e`). **Uncommitted.** Committing needs your authorisation.
+- **Branch:** `docs/phase-1-specification` (worktree `C:\laragon\www\nexo-v2`, from `origin/main@1cc7b4e`). Committed as four commits (one per document group) and opened as a PR to `main` on 2026-11-03.
 - **Scope:** documentation only. No application code, migrations, dependencies or configuration were changed.
 
 ---
