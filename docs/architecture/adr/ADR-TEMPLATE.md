@@ -1,54 +1,59 @@
 # ADR-NNNN: <short imperative title>
 
-**Status:** Proposed | Accepted | Superseded by ADR-XXXX
-**Date:** YYYY-MM-DD
+- **Number:** NNNN
+- **Status:** Proposed | Accepted | Rejected | Deprecated | Superseded by ADR-XXXX
+- **Date:** YYYY-MM-DD
+- **Decision owner:** Project owner
+- **Supersedes / relates to:** ADR-XXXX (optional)
 
 ---
 
 ## Context
 
-What is forcing a decision now?
+What exists today, and the constraints. Separate verified facts from assumptions.
 
-Describe:
+## Problem
 
-- the problem;
-- constraints;
-- relevant existing architecture;
-- what is known;
-- what remains uncertain.
+The specific question this ADR answers, in one or two sentences.
+
+## Decision drivers
+
+- The forces that matter for this decision (correctness, cost, operability, showcase value, …).
+
+## Considered alternatives
+
+### A. <option>
+
+Description, then why it was chosen or rejected.
+
+### B. <option>
+
+Description, then why it was chosen or rejected.
 
 ## Decision
 
-State the decision plainly.
+The choice, stated plainly. One future, not several.
 
-Avoid describing multiple possible futures.
+## Positive consequences
 
-## Alternatives Considered
+- What becomes easier or safer.
 
-### Option A
+## Negative consequences
 
-Why it was considered and why it was rejected.
+- What becomes harder, and what we now have to maintain.
 
-### Option B
+## Risks
 
-Why it was considered and why it was rejected.
+- What could go wrong, and how we would notice.
 
-## Consequences
+## Testing implications
 
-### Positive
+- The tests that prove the decision holds, and where they run.
 
-What becomes easier or safer?
+## Migration implications
 
-### Negative
-
-What becomes harder?
-
-### Follow-up
-
-What work does this decision create?
+- Effect on existing code, data and documents. "None" is a valid answer for greenfield work.
 
 ## Related
 
-- Related ADRs
-- Relevant product documentation
-- Relevant issues
+- ADRs, product requirements, lifecycle documents.
