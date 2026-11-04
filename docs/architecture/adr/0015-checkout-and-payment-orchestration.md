@@ -50,7 +50,11 @@ Rejected. A closed browser loses the order, and the return URL is client-control
 
 ## Decision
 
-1. **Checkout requires an authenticated customer.** Guest checkout is out of scope for v2 (PRD §6); the cart is merged on login. This removes the guest-cart ownership class of bug.
+1. **Checkout requires an authenticated customer with a verified email (P-1, approved 2026-11-04).**
+   - Guests may browse and keep a cart. They start checkout by signing in or registering inline. Either way the guest cart is merged into the customer's cart (FR-CART-02).
+   - Step 1 (place) and Step 2 (attempt) both reject a guest or an unverified account **before any write**. No OrderGroup, reservation, redemption, points hold, payment attempt or provider call is made. The check is in the use cases as well as the routes (security-model §5), so it holds even when the UI is bypassed.
+   - Verification happens before placement, and reservations are created only at placement. So the reservation TTL never runs while a customer verifies.
+   - Guest checkout is out of scope for v2 (PRD §6). This removes the guest-cart ownership class of bug.
 
 2. **Step 1, place.** `POST /checkout` carries an `Idempotency-Key`: a UUID generated when the checkout page renders, unique per customer.
    1. Re-price the cart server-side: current prices, promotions, points, shipping quotes. If the total differs from the total the customer confirmed, return **409** with the new summary. Never charge an amount the customer did not see.

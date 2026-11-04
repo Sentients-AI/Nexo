@@ -16,7 +16,11 @@ Each journey lists its steps, the requirements it exercises, and the failure bra
    - price and stock update per variant;
    - the vendor card links to the store page.
 3. Adds three items from three vendors. The cart groups lines by vendor and shows per-vendor subtotals and shipping estimates.
-4. Proceeds to checkout and is asked to sign in or create an account. The guest cart is merged (FR-CART-02).
+4. Proceeds to checkout. A visitor is asked to sign in or create an account inline (P-1). Signing in or registering merges the guest cart (FR-CART-02). The visitor then follows one of these paths:
+   - **4a. Existing account, verified email:** signs in and continues to step 5.
+   - **4b. Existing account, unverified email:** signs in. Checkout shows that the email must be verified before the order can be placed, with a resend action. Placing is unavailable until the email is verified. Continues at 4d.
+   - **4c. New customer:** registers inline (name, email, password) without leaving checkout, and is signed in. A verification email is sent, and checkout shows the same verification prompt as 4b. Continues at 4d.
+   - **4d. Return after verification:** the customer follows the link, which marks the email verified, and is returned to checkout with the same cart. If they open the link on another device, the email is still verified, and checkout on the original device (still signed in) continues with the same cart. Nothing was reserved yet, so no reservation time was used. Continues to step 5.
 5. Selects an address. Shipping is quoted per vendor, then the customer applies a coupon and redeems points. The summary shows goods, shipping per vendor, discount, points and total.
 6. Places the order:
    - the stock is reserved;
@@ -25,12 +29,16 @@ Each journey lists its steps, the requirements it exercises, and the failure bra
 7. Sees "Confirming your payment…", then the confirmation page: group reference and three vendor shipments.
 8. Receives one confirmation email. Each vendor gets a new-order notification.
 
-**Requirements:** FR-SRCH-01, FR-CAT-05, FR-CART-01…04, FR-CHK-01…10.
+**Requirements:** FR-SRCH-01, FR-CAT-05, FR-ID-01, FR-ID-02, FR-CART-01…04, FR-CHK-01…10.
 
 **Failure branches:**
 
 | Branch | Expected behaviour |
 |---|---|
+| Verification email not received | Resend from the checkout prompt (rate-limited); cart kept |
+| Verification link expired (60 minutes) or invalid | Email stays unverified; the page explains why and offers a resend; cart kept |
+| Unverified customer submits the order anyway (stale tab or direct request) | Rejected before any write; nothing reserved or charged; the verification prompt is shown |
+| Registration fails validation (for example the email is already registered) | Errors shown inline; the customer can sign in instead; cart kept |
 | Price changed between cart and placement | 409; review the new total |
 | Line out of stock at placement | Order not placed; short lines named |
 | Card declined | Retry with another card within TTL |
