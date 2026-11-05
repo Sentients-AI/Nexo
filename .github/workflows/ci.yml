@@ -33,6 +33,12 @@ jobs:
           coverage: none
           tools: composer:v2
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
       - name: Validate Composer
         run: composer validate --strict
 
@@ -53,5 +59,44 @@ jobs:
       - name: Static analysis
         run: vendor/bin/phpstan analyse --no-progress
 
+      - name: Install frontend dependencies
+        run: npm ci
+
+      # The only frontend build in CI: the Inertia feature tests below
+      # render @vite and need public/build/manifest.json.
+      - name: Build frontend
+        run: npm run build
+
       - name: Run tests
         run: php artisan test
+
+  frontend:
+    name: Node 24 / Vue 3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Show Node version
+        run: node --version && npm --version
+
+      # engine-strict in .npmrc makes this fail on any Node other than ^24.15.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      # Last, so a newly published advisory does not hide the results above.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
