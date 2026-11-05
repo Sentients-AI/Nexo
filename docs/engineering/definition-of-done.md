@@ -8,8 +8,11 @@ item that *does* apply is not.
 ## Always
 
 - [ ] Acceptance criteria / the stated problem are actually satisfied.
-- [ ] `composer check` passes locally — `composer validate --strict`,
-      `composer audit`, Pint, PHPStan, Pest.
+- [ ] The local gate passes, in this order (the frontend is built before
+      `composer check` because the Inertia feature tests read the Vite
+      manifest): `npm ci` → `npm run build` → `composer check`
+      (`composer validate --strict`, `composer audit`, Pint, PHPStan, Pest)
+      → `npm run typecheck` → `npm test` → `npm audit --omit=dev`.
 - [ ] CI is green on the PR.
 - [ ] No secrets, credentials, or real data committed.
 - [ ] The diff is focused — no unrelated refactoring, formatting sweeps, or

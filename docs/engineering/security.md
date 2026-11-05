@@ -63,6 +63,19 @@ endpoints.
 
 - `composer audit` runs in CI and in `composer check`. A new advisory fails the
   build; triage it before merging unrelated work.
+- `npm audit --omit=dev` runs last in the `Node 24 / Vue 3` CI job and is
+  blocking. It covers every package shipped to browsers. An advisory that
+  reaches a production dependency blocks merging immediately.
+- Development-only npm advisories do not block CI, but each one is recorded
+  below with its package chain, why it is accepted and when it was last
+  reassessed. Reassess with a full `npm audit` whenever `@vue/test-utils` or
+  `vitest` is updated, and at the start of each milestone.
+
+  | Advisory | Chain | Why accepted | Last reassessed |
+  |---|---|---|---|
+  | [GHSA-3g3m-2fjr-6pw4](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) (moderate, `glob` 13.0.6) | `@vue/test-utils` → `js-beautify` → `glob` | Test-time only; never bundled or shipped. No fixed `@vue/test-utils` 2.5.x yet; `npm audit fix --force` would downgrade to 2.4.11 | 2026-11-05 |
+  | [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) (moderate, `minimatch` 10.2.6) | `@vue/test-utils` → `js-beautify` → `editorconfig` / `glob` → `minimatch` | Same as above; inputs are our own repository paths, not untrusted patterns | 2026-11-05 |
+
 - Add a dependency only when this phase needs it. Prefer a small, maintained
   package or a few lines of first-party code over a large transitive tree.
 
