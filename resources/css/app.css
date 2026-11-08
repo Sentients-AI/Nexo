@@ -1,9 +1,120 @@
 @import 'tailwindcss';
+@import './tokens.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/*
+ * Tailwind's theme is reduced to the Nexo tokens. The default colours, radii,
+ * shadows, fonts and type scale are cleared, so utilities such as bg-red-500
+ * do not exist and every style goes through a token. `inline` makes each
+ * utility reference the token variable, so the :lang(ar) and reduced-motion
+ * overrides in tokens.css apply at runtime.
+ */
+@theme inline {
+    --color-*: initial;
+    --radius-*: initial;
+    --shadow-*: initial;
+    --font-*: initial;
+    --text-*: initial;
+    --tracking-*: initial;
+    --font-weight-*: initial;
+
+    --color-transparent: transparent;
+    --color-current: currentColor;
+
+    --color-canvas: var(--nx-color-bg-canvas);
+    --color-surface: var(--nx-color-bg-surface);
+    --color-subtle: var(--nx-color-bg-subtle);
+    --color-muted: var(--nx-color-bg-muted);
+
+    --color-fg: var(--nx-color-fg-default);
+    --color-fg-muted: var(--nx-color-fg-muted);
+
+    --color-accent: var(--nx-color-accent);
+    --color-accent-hover: var(--nx-color-accent-hover);
+    --color-on-accent: var(--nx-color-on-accent);
+
+    --color-border-subtle: var(--nx-color-border-subtle);
+    --color-border: var(--nx-color-border-default);
+    --color-border-control: var(--nx-color-border-control);
+    --color-focus: var(--nx-color-focus-ring);
+
+    --color-success: var(--nx-color-success-fg);
+    --color-success-bg: var(--nx-color-success-bg);
+    --color-warning: var(--nx-color-warning-fg);
+    --color-warning-bg: var(--nx-color-warning-bg);
+    --color-danger: var(--nx-color-danger-fg);
+    --color-danger-bg: var(--nx-color-danger-bg);
+    --color-info: var(--nx-color-info-fg);
+    --color-info-bg: var(--nx-color-info-bg);
+
+    --font-sans: var(--nx-font-sans);
+    --font-mono: var(--nx-font-mono);
+
+    --font-weight-regular: var(--nx-font-weight-regular);
+    --font-weight-medium: var(--nx-font-weight-medium);
+    --font-weight-semibold: var(--nx-font-weight-semibold);
+
+    --text-xs: var(--nx-text-xs);
+    --text-xs--line-height: var(--nx-text-xs-leading);
+    --text-sm: var(--nx-text-sm);
+    --text-sm--line-height: var(--nx-text-sm-leading);
+    --text-base: var(--nx-text-base);
+    --text-base--line-height: var(--nx-text-base-leading);
+    --text-lg: var(--nx-text-lg);
+    --text-lg--line-height: var(--nx-text-lg-leading);
+    --text-xl: var(--nx-text-xl);
+    --text-xl--line-height: var(--nx-text-xl-leading);
+    --text-2xl: var(--nx-text-2xl);
+    --text-2xl--line-height: var(--nx-text-2xl-leading);
+    --text-3xl: var(--nx-text-3xl);
+    --text-3xl--line-height: var(--nx-text-3xl-leading);
+    --text-4xl: var(--nx-text-4xl);
+    --text-4xl--line-height: var(--nx-text-4xl-leading);
+    --text-5xl: var(--nx-text-5xl);
+    --text-5xl--line-height: var(--nx-text-5xl-leading);
+
+    --tracking-tight: var(--nx-tracking-tight);
+    --tracking-normal: var(--nx-tracking-normal);
+    --tracking-wide: var(--nx-tracking-wide);
+
+    --spacing: var(--nx-space-unit);
+    --spacing-gutter: var(--nx-space-gutter);
+    --spacing-section: var(--nx-space-section);
+    --container-content: var(--nx-content-max);
+
+    --radius-sm: var(--nx-radius-sm);
+    --radius-md: var(--nx-radius-md);
+    --radius-lg: var(--nx-radius-lg);
+    --radius-full: var(--nx-radius-full);
+
+    --shadow-xs: var(--nx-shadow-xs);
+    --shadow-sm: var(--nx-shadow-sm);
+    --shadow-md: var(--nx-shadow-md);
+    --shadow-lg: var(--nx-shadow-lg);
+
+    --ease-standard: var(--nx-ease-standard);
+    --ease-enter: var(--nx-ease-enter);
+    --ease-exit: var(--nx-ease-exit);
+    --default-transition-duration: var(--nx-duration-base);
+    --default-transition-timing-function: var(--nx-ease-standard);
+}
+
+@layer base {
+    html {
+        background-color: var(--nx-color-bg-canvas);
+        color: var(--nx-color-fg-default);
+    }
+
+    /* Re-resolve the font stack where the language changes (see :lang(ar)
+       in tokens.css); inherited font-family would keep the outer stack. */
+    [lang] {
+        font-family: var(--nx-font-sans);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--nx-color-focus-ring);
+        outline-offset: 2px;
+    }
 }

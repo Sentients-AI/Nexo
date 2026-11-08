@@ -1,0 +1,164 @@
+/*
+ * Nexo design tokens.
+ *
+ * Plain CSS custom properties with no Tailwind or Vue syntax, so the Filament
+ * admin can import this file unchanged (ADR-0020). app.css maps them into
+ * Tailwind's @theme.
+ *
+ * Direction: premium minimalist on a warm neutral palette. The accent is ink
+ * (near-black) with no hue; colour is reserved for status.
+ *
+ * Layers:
+ *   --nx-palette-*  raw values. Components never use these directly.
+ *   everything else semantic tokens, which components and Tailwind use.
+ *
+ * Dark mode: not shipped. It will be one block that re-points the semantic
+ * colour tokens at other palette values; no component changes are needed.
+ *
+ * Contrast rules for every colour token live in
+ * resources/js/design/contrast-pairs.ts and are enforced by Vitest.
+ */
+
+:root {
+    color-scheme: light;
+
+    /* ---- Palette: warm neutrals ---- */
+    --nx-palette-neutral-0: #ffffff;
+    --nx-palette-neutral-25: #fcfcfa;
+    --nx-palette-neutral-50: #f7f6f3;
+    --nx-palette-neutral-100: #efeee9;
+    --nx-palette-neutral-200: #e3e1db;
+    --nx-palette-neutral-300: #cfccc4;
+    --nx-palette-neutral-400: #a8a49b;
+    --nx-palette-neutral-500: #7b776e;
+    --nx-palette-neutral-600: #5c5952;
+    --nx-palette-neutral-700: #45423d;
+    --nx-palette-neutral-800: #2d2b28;
+    --nx-palette-neutral-900: #1c1b19;
+    --nx-palette-neutral-950: #121110;
+
+    /* ---- Palette: status ---- */
+    --nx-palette-green-50: #edf6f0;
+    --nx-palette-green-700: #1f6a44;
+    --nx-palette-amber-50: #fbf3e2;
+    --nx-palette-amber-800: #7a4807;
+    --nx-palette-red-50: #fcefee;
+    --nx-palette-red-700: #b0262c;
+    --nx-palette-blue-50: #eef3fb;
+    --nx-palette-blue-700: #1f58ad;
+
+    /* ---- Colour: backgrounds ---- */
+    --nx-color-bg-canvas: var(--nx-palette-neutral-25);
+    --nx-color-bg-surface: var(--nx-palette-neutral-0);
+    --nx-color-bg-subtle: var(--nx-palette-neutral-50);
+    --nx-color-bg-muted: var(--nx-palette-neutral-100);
+
+    /* ---- Colour: text ---- */
+    --nx-color-fg-default: var(--nx-palette-neutral-900);
+    --nx-color-fg-muted: var(--nx-palette-neutral-600);
+
+    /* ---- Colour: accent (ink) ---- */
+    --nx-color-accent: var(--nx-palette-neutral-900);
+    --nx-color-accent-hover: var(--nx-palette-neutral-700);
+    --nx-color-on-accent: var(--nx-palette-neutral-0);
+
+    /* ---- Colour: borders and focus ---- */
+    --nx-color-border-subtle: var(--nx-palette-neutral-100);
+    --nx-color-border-default: var(--nx-palette-neutral-200);
+    --nx-color-border-control: var(--nx-palette-neutral-500);
+    --nx-color-focus-ring: var(--nx-palette-neutral-900);
+
+    /* ---- Colour: status ---- */
+    --nx-color-success-fg: var(--nx-palette-green-700);
+    --nx-color-success-bg: var(--nx-palette-green-50);
+    --nx-color-warning-fg: var(--nx-palette-amber-800);
+    --nx-color-warning-bg: var(--nx-palette-amber-50);
+    --nx-color-danger-fg: var(--nx-palette-red-700);
+    --nx-color-danger-bg: var(--nx-palette-red-50);
+    --nx-color-info-fg: var(--nx-palette-blue-700);
+    --nx-color-info-bg: var(--nx-palette-blue-50);
+
+    /* ---- Typography ----
+     * The Latin face also covers Malay. Arabic switches the stack below; the
+     * Latin face stays second so Latin words and digits in Arabic text match
+     * the rest of the brand (digits are Latin, ADR-0018 §3).
+     * --font-instrument-sans and --font-ibm-plex-sans-arabic are emitted by the
+     * laravel-vite-plugin fonts integration with metric-matched fallbacks. */
+    --nx-font-sans: var(--font-instrument-sans, 'Instrument Sans'), ui-sans-serif, system-ui, sans-serif, var(--nx-font-emoji);
+    --nx-font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --nx-font-arabic:
+        var(--font-ibm-plex-sans-arabic, 'IBM Plex Sans Arabic'), var(--font-instrument-sans, 'Instrument Sans'),
+        ui-sans-serif, system-ui, sans-serif, var(--nx-font-emoji);
+    --nx-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --nx-font-weight-regular: 400;
+    --nx-font-weight-medium: 500;
+    --nx-font-weight-semibold: 600;
+
+    --nx-text-xs: 0.75rem;
+    --nx-text-xs-leading: 1rem;
+    --nx-text-sm: 0.875rem;
+    --nx-text-sm-leading: 1.25rem;
+    --nx-text-base: 1rem;
+    --nx-text-base-leading: 1.5rem;
+    --nx-text-lg: 1.125rem;
+    --nx-text-lg-leading: 1.75rem;
+    --nx-text-xl: 1.25rem;
+    --nx-text-xl-leading: 1.75rem;
+    --nx-text-2xl: 1.5rem;
+    --nx-text-2xl-leading: 2rem;
+    --nx-text-3xl: 1.875rem;
+    --nx-text-3xl-leading: 2.25rem;
+    --nx-text-4xl: 2.25rem;
+    --nx-text-4xl-leading: 2.5rem;
+    --nx-text-5xl: 3rem;
+    --nx-text-5xl-leading: 1.1;
+
+    --nx-tracking-tight: -0.015em;
+    --nx-tracking-normal: 0em;
+    --nx-tracking-wide: 0.04em;
+
+    /* ---- Spacing: a 4px base unit; Tailwind multiplies it (p-4 = 16px) ---- */
+    --nx-space-unit: 0.25rem;
+    --nx-space-gutter: 1.5rem;
+    --nx-space-section: 4rem;
+    --nx-content-max: 80rem;
+
+    /* ---- Radius ---- */
+    --nx-radius-sm: 0.25rem;
+    --nx-radius-md: 0.5rem;
+    --nx-radius-lg: 0.75rem;
+    --nx-radius-full: 9999px;
+
+    /* ---- Elevation: ink-tinted, soft ---- */
+    --nx-shadow-xs: 0 1px 2px 0 rgb(28 27 25 / 0.05);
+    --nx-shadow-sm: 0 1px 3px 0 rgb(28 27 25 / 0.08), 0 1px 2px -1px rgb(28 27 25 / 0.06);
+    --nx-shadow-md: 0 4px 12px -2px rgb(28 27 25 / 0.08), 0 2px 4px -2px rgb(28 27 25 / 0.05);
+    --nx-shadow-lg: 0 16px 32px -8px rgb(28 27 25 / 0.12), 0 4px 8px -4px rgb(28 27 25 / 0.06);
+
+    /* ---- Motion ---- */
+    --nx-duration-fast: 120ms;
+    --nx-duration-base: 200ms;
+    --nx-duration-slow: 320ms;
+    --nx-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --nx-ease-enter: cubic-bezier(0, 0, 0, 1);
+    --nx-ease-exit: cubic-bezier(0.3, 0, 1, 1);
+}
+
+/* Arabic: its own face and taller body lines. Scoped by language, not just
+ * the page locale, so Arabic content inside an English page (a vendor or
+ * product name) gets it too; app.css re-applies font-family on [lang]. */
+:lang(ar) {
+    --nx-font-sans: var(--nx-font-arabic);
+    --nx-text-base-leading: 1.75rem;
+    --nx-text-sm-leading: 1.5rem;
+    --nx-tracking-tight: 0em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --nx-duration-fast: 0ms;
+        --nx-duration-base: 0ms;
+        --nx-duration-slow: 0ms;
+    }
+}

@@ -13,6 +13,14 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
+                // Arabic glyphs only; Latin text in Arabic pages falls back to
+                // Instrument Sans (see --nx-font-arabic). Not preloaded, since
+                // only Arabic pages use it.
+                bunny('IBM Plex Sans Arabic', {
+                    weights: [400, 500, 600],
+                    subsets: ['arabic'],
+                    preload: false,
+                }),
             ],
         }),
         vue({
