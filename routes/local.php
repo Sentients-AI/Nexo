@@ -10,3 +10,4 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/dev/tokens', fn () => Inertia::render('Dev/Tokens'))->name('dev.tokens');
+Route::get('/dev/components', fn () => Inertia::render('Dev/Components'))->name('dev.components');

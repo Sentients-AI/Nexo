@@ -19,18 +19,21 @@ afterEach(function () {
     putenv('APP_ENV=testing');
 });
 
-it('is not routed outside the local environment', function (string $environment) {
+it('is not routed outside the local environment', function (string $environment, string $url) {
     bootAs($environment);
 
     expect(app()->environment())->toBe($environment);
 
-    $this->get('/dev/tokens')->assertNotFound();
-})->with(['production', 'staging', 'demo', 'testing']);
+    $this->get($url)->assertNotFound();
+})->with(['production', 'staging', 'demo', 'testing'])->with(['/dev/tokens', '/dev/components']);
 
-it('renders the token gallery in the local environment', function () {
+it('renders the galleries in the local environment', function (string $url, string $component) {
     bootAs('local');
 
-    $this->get('/dev/tokens')
+    $this->get($url)
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->component('Dev/Tokens'));
-});
+        ->assertInertia(fn (Assert $page) => $page->component($component));
+})->with([
+    'tokens' => ['/dev/tokens', 'Dev/Tokens'],
+    'components' => ['/dev/components', 'Dev/Components'],
+]);
