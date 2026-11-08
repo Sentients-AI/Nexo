@@ -1,0 +1,27 @@
+{
+    "common": {
+        "loading": "Memuatkan"
+    },
+    "field": {
+        "required": "wajib"
+    },
+    "link": {
+        "new_tab": "(dibuka dalam tab baharu)"
+    },
+    "dialog": {
+        "close": "Tutup"
+    },
+    "toast": {
+        "dismiss": "Tutup pemberitahuan"
+    },
+    "price": {
+        "now": "Harga",
+        "was": "Harga asal"
+    },
+    "pagination": {
+        "label": "Penomboran halaman",
+        "previous": "Sebelumnya",
+        "next": "Seterusnya",
+        "page": "Halaman {page}"
+    }
+}

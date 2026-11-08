@@ -101,4 +101,7 @@ Adding to this list needs a PR that updates this table.
 
 Rules F1–F4 are enforced with ESLint (`import/no-restricted-paths`, plus a custom Tailwind class lint) in Phase 3.
 
-ESLint is not installed yet (owner decision), so F4 is enforced now by a Vitest check, `resources/js/rules/logical-direction.test.ts`, which scans Vue, TypeScript, Blade and CSS for physical utilities and properties. It moves to ESLint if and when ESLint is approved.
+ESLint is not installed yet (owner decision), so F1 and F4 are enforced now by Vitest checks that run in CI, and move to ESLint if and when ESLint is approved:
+
+- **F1:** `resources/js/rules/surface-boundaries.test.ts`. Storefront code is `resources/js/storefront/**` and `resources/js/pages/Storefront/**`; vendor code is `resources/js/vendor/**` and `resources/js/pages/Vendor/**`; everything else (`shared/`, `i18n/`, `design/`, `types/`, …) is shared and may import neither. It resolves `@/` and relative imports, static and dynamic.
+- **F4:** `resources/js/rules/logical-direction.test.ts`, which scans Vue, TypeScript, Blade and CSS for physical utilities and properties.

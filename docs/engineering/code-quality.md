@@ -93,6 +93,35 @@ composer analyse
   `resources/js/rules/logical-direction.test.ts`; a line may opt out with
   `f4-allow` and a reason.
 
+## Component kit
+
+- **Location:** `resources/js/shared/ui/`: shared by storefront and vendor
+  pages (rule F1). The gallery at `/dev/components` (local only) shows every
+  component in en, ms and ar.
+- **Components:** `AppButton`, `TextLink`, `FormField` + `TextInput` /
+  `SelectInput`, `CheckboxInput`, `StatusBadge` (generic `tone`),
+  `SurfaceCard`, `ModalDialog`, `ToastRegion` (+ `toasts.ts`),
+  `LoadingSkeleton`, `EmptyState`, `MoneyPrice`, `PageNav`. Names are
+  multi-word to stay clear of HTML elements and Inertia's `Link`.
+- **Forms:** put the control inside `<FormField label hint error>`; it gets
+  its id, `aria-describedby` (error, then hint), `aria-invalid` and
+  `required` automatically (NFR-A11Y-02). Email, URL and phone inputs are
+  always LTR.
+- **Dialogs** use the native `<dialog>` with `showModal()` (inert
+  background, focus trap, Escape) and return focus to the trigger.
+- **Toasts:** call `push(tone, message)` in the browser, or send
+  `Inertia::flash('toast', ['tone' => 'success', 'key' => '…', 'params' => [...]])`
+  from the server; the key is translated in the browser. Success and info
+  toasts auto-dismiss (paused on hover or focus); errors stay until dismissed.
+- **Money** is shown only through `MoneyPrice` (LTR-isolated, no
+  arithmetic, F3).
+- **Tests:** every component has Vitest + Vue Test Utils tests including
+  keyboard/focus behaviour where it applies and an axe check
+  (`resources/js/test/axe.ts`, NFR-A11Y-04; colour contrast is covered by
+  the token tests instead). jsdom has no `<dialog>`, so
+  `resources/js/test/setup.ts` stubs `showModal`/`close`; real browser
+  behaviour is checked manually and in Phase 9 browser tests.
+
 ## Before every pull request
 
 ```sh

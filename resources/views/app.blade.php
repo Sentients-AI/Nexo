@@ -14,6 +14,7 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
+        @includeWhen(app()->isLocal(), 'partials.dev-bar')
         @inertia
     </body>
 </html>
