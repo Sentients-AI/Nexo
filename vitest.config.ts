@@ -12,6 +12,7 @@ export default defineConfig({
     test: {
         environment: 'jsdom',
         include: ['resources/js/**/*.test.ts'],
+        setupFiles: ['resources/js/test/setup.ts'],
         // Let tests read stylesheets as text (`?raw`); by default Vitest
         // stubs CSS out and a raw import is an empty string.
         css: { include: [/resources\/css\/.+\.css/] },
