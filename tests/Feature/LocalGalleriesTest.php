@@ -27,6 +27,24 @@ it('is not routed outside the local environment', function (string $environment,
     $this->get($url)->assertNotFound();
 })->with(['production', 'staging', 'demo', 'testing'])->with(['/dev/tokens', '/dev/components']);
 
+it('shows a development navigation bar on every page in local', function (string $url) {
+    bootAs('local');
+
+    $html = $this->get($url)->assertOk()->getContent();
+
+    expect($html)->toContain('<nav aria-label="Development" lang="en" dir="ltr"');
+
+    foreach (['/', '/ms', '/ar', '/dev/tokens', '/dev/components'] as $path) {
+        expect($html)->toContain('href="'.url($path).'"');
+    }
+})->with(['/', '/ar', '/dev/components']);
+
+it('never shows the development navigation bar outside local', function (string $environment) {
+    bootAs($environment);
+
+    expect($this->get('/')->assertOk()->getContent())->not->toContain('aria-label="Development"');
+})->with(['production', 'staging', 'demo', 'testing']);
+
 it('renders the galleries in the local environment', function (string $url, string $component) {
     bootAs('local');
 
