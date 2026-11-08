@@ -14,12 +14,13 @@ export default defineConfig({
                     weights: [400, 500, 600],
                 }),
                 // Arabic glyphs only; Latin text in Arabic pages falls back to
-                // Instrument Sans (see --nx-font-arabic). Not preloaded, since
-                // only Arabic pages use it.
+                // Instrument Sans (see --nx-font-arabic). Body and heading
+                // weights are preloaded, and AppServiceProvider drops those
+                // preloads on non-Arabic pages.
                 bunny('IBM Plex Sans Arabic', {
                     weights: [400, 500, 600],
                     subsets: ['arabic'],
-                    preload: false,
+                    preload: [{ weight: 400 }, { weight: 600 }],
                 }),
             ],
         }),

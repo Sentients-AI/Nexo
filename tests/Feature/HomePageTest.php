@@ -18,11 +18,7 @@ it('sets the document language and direction on the root element', function () {
 });
 
 it('derives a right-to-left direction for Arabic', function () {
-    // Locale routing arrives in M3; until then the locale is set directly.
-    // M3 replaces this with a request to the /ar storefront.
-    $this->app->setLocale('ar');
-
-    $this->get('/')
+    $this->get('/ar')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('locale', 'ar')

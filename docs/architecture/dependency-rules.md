@@ -100,3 +100,5 @@ Adding to this list needs a PR that updates this table.
 | F4 | No physical direction utilities (`ml-`, `pr-`, `left-`, `text-left`) in components; use logical equivalents (`ms-`, `pe-`, `start-`, `text-start`) |
 
 Rules F1–F4 are enforced with ESLint (`import/no-restricted-paths`, plus a custom Tailwind class lint) in Phase 3.
+
+ESLint is not installed yet (owner decision), so F4 is enforced now by a Vitest check, `resources/js/rules/logical-direction.test.ts`, which scans Vue, TypeScript, Blade and CSS for physical utilities and properties. It moves to ESLint if and when ESLint is approved.

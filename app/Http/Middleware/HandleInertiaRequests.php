@@ -2,18 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Localization\Locale;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * Locales written right to left.
-     *
-     * @var list<string>
-     */
-    private const array RTL_LOCALES = ['ar'];
-
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -31,12 +25,12 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $locale = app()->getLocale();
-
+        // Closures: this middleware runs before the route's `locale:`
+        // middleware, so the locale is read when the response is built.
         return [
             ...parent::share($request),
-            'locale' => $locale,
-            'direction' => in_array($locale, self::RTL_LOCALES, true) ? 'rtl' : 'ltr',
+            'locale' => fn (): string => Locale::current()->value,
+            'direction' => fn (): string => Locale::current()->direction(),
         ];
     }
 }
