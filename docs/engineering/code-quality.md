@@ -64,6 +64,35 @@ composer analyse
 - **Arabic** switches to IBM Plex Sans Arabic and taller line heights through
   `:lang(ar)`, so it also applies to Arabic content inside other locales.
 
+## Internationalisation
+
+- **Locales:** `en` (primary and fallback), `ms`, `ar` (RTL), per ADR-0007.
+  The PHP source of truth is `App\Http\Localization\Locale`; the frontend
+  mirror is `resources/js/i18n/locales.ts`.
+- **URLs (NFR-I18N-04):** storefront routes are declared once inside
+  `LocalizedRoutes::group()` in `routes/web.php` and registered for `/`,
+  `/ms` and `/ar`, named `{locale}.{name}` (e.g. `ar.storefront.home`).
+  `/en/...` redirects (301) to the unprefixed URL. Every localised page
+  emits `hreflang` alternates plus `x-default`.
+- **Strings:** `resources/js/i18n/messages/{locale}/{namespace}.json`; the
+  key is `{namespace}.{path}` (e.g. `storefront.home.title`). Use
+  `const { t } = useI18n()`; parameters are `{name}`, and plurals are objects
+  keyed by `Intl.PluralRules` category (Arabic needs all six). Each page loads
+  only its own locale plus English.
+- **Coverage (NFR-I18N-01):** `resources/js/i18n/coverage.test.ts` fails CI
+  when a locale is missing or has extra keys, a plural lacks a category the
+  language uses, placeholders differ from English, or source calls `t()` with
+  a key that does not exist. Every UI string ships in all three locales.
+- **Formatting (NFR-I18N-03):** use `formatMoney`, `formatNumber`,
+  `formatDate` and `formatDateTime` from `useI18n()`, never `toFixed` or
+  hand-built strings. Dates are shown in `Asia/Kuala_Lumpur`; Arabic uses
+  Latin digits; money is `RM 2,418.50` in every locale (render it
+  LTR-isolated inside RTL text).
+- **Direction (F4, NFR-I18N-02):** logical utilities only (`ms-`, `pe-`,
+  `start-`, `text-start`, `border-s`, `rounded-e`). Enforced by
+  `resources/js/rules/logical-direction.test.ts`; a line may opt out with
+  `f4-allow` and a reason.
+
 ## Before every pull request
 
 ```sh
