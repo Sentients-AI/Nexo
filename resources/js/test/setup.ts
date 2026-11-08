@@ -1,6 +1,7 @@
 // Vitest setup (vitest.config.ts → setupFiles).
 import { afterEach, beforeEach } from 'vitest';
 import { activateLocale } from '@/i18n';
+import { reset as resetToasts } from '@/shared/ui/toasts';
 
 // jsdom has no HTMLDialogElement.showModal/close. This stand-in models what
 // the components rely on: `open`, focus moving into the dialog, Escape
@@ -48,6 +49,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+    resetToasts();
     document.body.innerHTML = '';
     document.documentElement.style.overflow = '';
 });

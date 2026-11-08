@@ -10,8 +10,24 @@ export interface SharedProps {
     direction: Direction;
 }
 
+/**
+ * Inertia flash data, sent with Inertia::flash('toast', [...]). Messages are
+ * translation keys so every toast is translated in the browser like the
+ * rest of the UI.
+ */
+export interface FlashToast {
+    tone: 'success' | 'info' | 'error';
+    key: string;
+    params?: Record<string, string | number>;
+}
+
+export interface Flash {
+    toast?: FlashToast;
+}
+
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: SharedProps;
+        flashDataType: Flash;
     }
 }
