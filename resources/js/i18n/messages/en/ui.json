@@ -1,0 +1,27 @@
+{
+    "common": {
+        "loading": "Loading"
+    },
+    "field": {
+        "required": "required"
+    },
+    "link": {
+        "new_tab": "(opens in a new tab)"
+    },
+    "dialog": {
+        "close": "Close"
+    },
+    "toast": {
+        "dismiss": "Dismiss notification"
+    },
+    "price": {
+        "now": "Price",
+        "was": "Original price"
+    },
+    "pagination": {
+        "label": "Pagination",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {page}"
+    }
+}
