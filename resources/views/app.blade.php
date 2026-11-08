@@ -5,6 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>{{ config('app.name', 'Nexo') }}</title>
+@foreach (\App\Http\Localization\LocalizedRoutes::alternates() as $hreflang => $href)
+        <link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">
+@endforeach
 
         @fonts
         @vite(['resources/css/app.css', 'resources/js/app.ts'])

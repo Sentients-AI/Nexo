@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Localization\LocalizedRoutes;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', fn () => Inertia::render('Storefront/Home'));
+// Storefront: registered for every locale (/, /ms, /ar) and named
+// "{locale}.storefront.*".
+LocalizedRoutes::group(function () {
+    Route::get('/', fn () => Inertia::render('Storefront/Home'))->name('storefront.home');
+});
