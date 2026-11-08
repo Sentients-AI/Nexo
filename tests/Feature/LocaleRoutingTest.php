@@ -30,6 +30,23 @@ it('redirects the English prefix to the unprefixed canonical URL', function (str
     ['/en/products/kopi?sort=new', '/products/kopi?sort=new'],
 ]);
 
+it('never redirects the English prefix off-site (open redirect)', function (string $payload, string $samePath) {
+    $location = $this->get($payload)->assertStatus(301)->headers->get('Location');
+    $app = parse_url(url('/'));
+
+    expect($location)
+        ->toBeString()
+        ->not->toStartWith('//')
+        ->not->toStartWith('/\\')
+        ->and(parse_url($location, PHP_URL_SCHEME))->toBe($app['scheme'])
+        ->and(parse_url($location, PHP_URL_HOST))->toBe($app['host'])
+        ->and(parse_url($location, PHP_URL_PATH))->toBe($samePath);
+})->with([
+    'double slash' => ['/en//evil.com', '/evil.com'],
+    'encoded slash' => ['/en/%2Fevil.com', '/evil.com'],
+    'two encoded slashes' => ['/en/%2F%2Fevil.com', '/evil.com'],
+]);
+
 it('only treats a whole /en segment as the English prefix', function () {
     $this->get('/enquiries')->assertNotFound();
 });
