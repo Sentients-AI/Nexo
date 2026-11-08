@@ -5,8 +5,9 @@ import { Head } from '@inertiajs/vue3';
 <template>
     <Head title="Home" />
 
-    <main class="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-6">
-        <h1 class="text-3xl font-semibold">Nexo</h1>
-        <p class="mt-2 text-base">The storefront is on its way.</p>
+    <main class="mx-auto flex min-h-screen max-w-content flex-col justify-center px-gutter py-section">
+        <p class="text-xs font-medium tracking-wide text-fg-muted uppercase">Marketplace · Malaysia</p>
+        <h1 class="mt-4 text-5xl font-semibold tracking-tight">Nexo</h1>
+        <p class="mt-4 max-w-xl text-lg text-fg-muted">The storefront is on its way.</p>
     </main>
 </template>
