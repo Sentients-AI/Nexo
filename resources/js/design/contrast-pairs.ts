@@ -49,6 +49,8 @@ export function contrastPairs(tokens: TokenMap): ContrastPair[] {
 
         on(fg, `--nx-color-${tone}-bg`, TEXT_MINIMUM);
         for (const bg of backgrounds) on(fg, bg, TEXT_MINIMUM);
+        // Body text inside a tinted alert or badge (e.g. a danger message).
+        for (const text of texts) on(text, `--nx-color-${tone}-bg`, TEXT_MINIMUM);
     }
 
     on('--nx-color-on-accent', '--nx-color-accent', TEXT_MINIMUM);

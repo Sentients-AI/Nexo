@@ -1,6 +1,12 @@
 import tokensCss from '../../css/tokens.css?raw';
 import { describe, expect, it } from 'vitest';
-import { colorTokenNames, contrastPairs, DECORATIVE_COLOR_TOKENS, evaluateContrast } from './contrast-pairs';
+import {
+    colorTokenNames,
+    contrastPairs,
+    DECORATIVE_COLOR_TOKENS,
+    evaluateContrast,
+    STATUS_TONES,
+} from './contrast-pairs';
 import { readRootTokens } from './tokens';
 
 const tokens = readRootTokens(tokensCss);
@@ -38,6 +44,16 @@ describe('design token contrast (NFR-A11Y-03)', () => {
         );
 
         expect(unclassified).toEqual([]);
+    });
+
+    it('checks body text on every status background (alert and badge content)', () => {
+        const checked = new Set(contrastPairs(tokens).map((p) => `${p.foreground}|${p.background}`));
+        const texts = colorTokenNames(tokens).filter((name) => name.startsWith('--nx-color-fg-'));
+        const missing = texts.flatMap((fg) =>
+            STATUS_TONES.map((tone) => `${fg}|--nx-color-${tone}-bg`).filter((pair) => !checked.has(pair)),
+        );
+
+        expect(missing).toEqual([]);
     });
 
     it('lists only decorative tokens that exist', () => {
