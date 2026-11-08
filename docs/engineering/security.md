@@ -73,8 +73,8 @@ endpoints.
 
   | Advisory | Chain | Why accepted | Last reassessed |
   |---|---|---|---|
-  | [GHSA-3g3m-2fjr-6pw4](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) (moderate, `glob` 13.0.6) | `@vue/test-utils` → `js-beautify` → `glob` | Test-time only; never bundled or shipped. No fixed `@vue/test-utils` 2.5.x yet; `npm audit fix --force` would downgrade to 2.4.11 | 2026-11-05 |
-  | [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) (moderate, `minimatch` 10.2.6) | `@vue/test-utils` → `js-beautify` → `editorconfig` / `glob` → `minimatch` | Same as above; inputs are our own repository paths, not untrusted patterns | 2026-11-05 |
+  | [GHSA-3g3m-2fjr-6pw4](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) (moderate, `glob` 13.0.6) | `@vue/test-utils` → `js-beautify` → `glob` | Test-time only; never bundled or shipped. No fixed `@vue/test-utils` 2.5.x yet; `npm audit fix --force` would downgrade to 2.4.11 | 2026-11-08 |
+  | [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249) (moderate, `minimatch` 10.2.6) | `@vue/test-utils` → `js-beautify` → `editorconfig` / `glob` → `minimatch` | Same as above; inputs are our own repository paths, not untrusted patterns | 2026-11-08 |
 
 - Add a dependency only when this phase needs it. Prefer a small, maintained
   package or a few lines of first-party code over a large transitive tree.

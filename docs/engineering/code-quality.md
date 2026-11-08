@@ -46,6 +46,24 @@ composer analyse
   baseline file, no `@phpstan-ignore` sprinkled to silence a real problem. Fix
   the cause. A genuinely unavoidable ignore carries a comment explaining why.
 
+## Styling — design tokens
+
+- **Source of truth:** `resources/css/tokens.css`, plain CSS custom properties
+  (`--nx-*`) with no Tailwind or Vue syntax, so the Filament admin can reuse
+  them (ADR-0020). `resources/css/app.css` maps them into Tailwind's `@theme`.
+- **Tailwind's defaults are cleared** for colour, radius, shadow, font, type
+  scale and tracking. Utilities such as `bg-red-500` do not exist; use the
+  semantic ones (`bg-surface`, `text-fg-muted`, `text-danger`, `rounded-md`).
+- **Components use semantic tokens** (`--nx-color-*`), never `--nx-palette-*`.
+- **Contrast is tested.** `resources/js/design/contrast-pairs.ts` derives the
+  required pairs from token names (text 4.5:1, controls and focus 3:1,
+  NFR-A11Y-03). A new colour token fails the suite until it is either covered
+  by a pair or listed as decorative with a reason.
+- **Gallery:** `/dev/tokens` renders every token. It is registered only when
+  `APP_ENV=local` (`routes/local.php`) and 404s everywhere else.
+- **Arabic** switches to IBM Plex Sans Arabic and taller line heights through
+  `:lang(ar)`, so it also applies to Arabic content inside other locales.
+
 ## Before every pull request
 
 ```sh
