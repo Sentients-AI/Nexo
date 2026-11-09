@@ -4,10 +4,15 @@ import { createApp, h } from 'vue';
 import { activateLocale } from './i18n';
 import { hreflangTags } from './i18n/alternates';
 
+// Read from the element property: browsers blank the nonce attribute.
+const cspNonce = document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.nonce;
+
 const pages = import.meta.glob<DefineComponent>('./pages/**/*.vue');
 
 void createInertiaApp({
     title: (title) => (title ? `${title} · Nexo` : 'Nexo'),
+    // CSP nonce for the <style> tags Inertia injects (progress bar, error dialog).
+    ...(cspNonce ? { nonce: cspNonce } : {}),
     // Replaces the server-rendered hreflang links on every visit.
     serverHead: (page) => hreflangTags(page.props.alternates),
     resolve: async (name, page) => {
