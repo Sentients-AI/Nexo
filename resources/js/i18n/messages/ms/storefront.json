@@ -3,5 +3,16 @@
         "title": "Laman Utama",
         "eyebrow": "Pasaran · Malaysia",
         "tagline": "Kedai dalam talian sedang disiapkan."
+    },
+    "header": {
+        "cart": {
+            "other": "Troli, {count} item"
+        }
+    },
+    "checkout": {
+        "title": "Pembayaran",
+        "secure": "Pembayaran selamat",
+        "preview_title": "Langkah pembayaran akan datang",
+        "preview_body": "Alamat, penghantaran dan pembayaran akan dipaparkan di sini selepas troli dan pembayaran dibina."
     }
 }

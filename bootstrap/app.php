@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Errors\ErrorPages;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['locale' => SetLocale::class]);
 
+        // Global and first, so 404s, maintenance (503) responses and /up get
+        // the headers too, and the CSP nonce exists before any page renders.
+        $middleware->prepend(SecurityHeaders::class);
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);
@@ -30,4 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // 403, 404, 419, 500 and 503 render as translated Inertia pages.
+        $exceptions->respond(new ErrorPages);
     })->create();

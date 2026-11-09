@@ -59,3 +59,8 @@ If a value might be sensitive, log an identifier instead of the value.
 Return a helpful, non-leaking message. Validation errors are specific; internal
 errors are generic. Never surface a stack trace, SQL, or an internal path to a
 user.
+
+HTTP errors 403, 404, 419, 500 and 503 render as the translated Inertia page
+`Errors/ErrorPage` (`App\Http\Errors\ErrorPages`), which receives only the
+status code. `tests/Feature/ErrorPagesTest.php` proves the 500 page leaks
+nothing with `APP_DEBUG=false` (NFR-SEC-07).

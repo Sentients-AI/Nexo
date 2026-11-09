@@ -23,5 +23,33 @@
         "previous": "Previous",
         "next": "Next",
         "page": "Page {page}"
+    },
+    "errors": {
+        "code": "Error {status}",
+        "home": "Go to the home page",
+        "forbidden": {
+            "title": "You can’t open this page",
+            "description": "You don’t have permission to view it."
+        },
+        "not_found": {
+            "title": "We can’t find that page",
+            "description": "It may have moved, or the link may be wrong."
+        },
+        "page_expired": {
+            "title": "This page has expired",
+            "description": "For your security, the form timed out. Go back, refresh the page and try again."
+        },
+        "server_error": {
+            "title": "Something went wrong",
+            "description": "An unexpected error occurred on our side. Please try again in a few minutes."
+        },
+        "unavailable": {
+            "title": "We’ll be back soon",
+            "description": "Nexo is down for maintenance. Please check back shortly."
+        }
+    },
+    "layout": {
+        "skip_to_content": "Skip to content",
+        "language": "Language"
     }
 }

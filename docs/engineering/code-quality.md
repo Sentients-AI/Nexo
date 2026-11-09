@@ -73,7 +73,11 @@ composer analyse
   `LocalizedRoutes::group()` in `routes/web.php` and registered for `/`,
   `/ms` and `/ar`, named `{locale}.{name}` (e.g. `ar.storefront.home`).
   `/en/...` redirects (301) to the unprefixed URL. Every localised page
-  emits `hreflang` alternates plus `x-default`.
+  emits `hreflang` alternates plus `x-default`. They are the shared
+  `alternates` prop: Blade renders them for the first response and
+  Inertia's `serverHead` (`resources/js/i18n/alternates.ts`) replaces them
+  on every client-side visit. The language switcher reads the same prop,
+  never the DOM.
 - **Strings:** `resources/js/i18n/messages/{locale}/{namespace}.json`; the
   key is `{namespace}.{path}` (e.g. `storefront.home.title`). Use
   `const { t } = useI18n()`; parameters are `{name}`, and plurals are objects
@@ -121,6 +125,30 @@ composer analyse
   the token tests instead). jsdom has no `<dialog>`, so
   `resources/js/test/setup.ts` stubs `showModal`/`close`; real browser
   behaviour is checked manually and in Phase 9 browser tests.
+
+## Layouts
+
+- **Storefront** (`resources/js/storefront/layouts/StorefrontLayout.vue`):
+  skip link, header (brand, language switcher, cart count), `<main
+  id="main">`, toasts. **Checkout** (`CheckoutLayout.vue`): the same frame
+  with a quiet header and no cart or browsing links. **Vendor**
+  (`resources/js/vendor/layouts/VendorLayout.vue`): static menu, no auth
+  until ADR-0011; sections without a page are text, never dead links.
+- A page picks its layout with `defineOptions({ layout: StorefrontLayout })`.
+  Inertia keeps it mounted across visits.
+- Shared frame pieces (`SkipLink`, `LocaleSwitcher`) live in
+  `resources/js/shared/layout/` so both surfaces can use them (F1).
+- Local previews: `/dev/layouts/checkout` and `/dev/layouts/vendor`, in
+  every locale (`/ms/...`, `/ar/...`).
+- Which screen uses which layout, and what each one waits for:
+  [`screen-inventory.md`](../product/screen-inventory.md).
+
+## Error pages
+
+`App\Http\Errors\ErrorPages` (registered in `bootstrap/app.php`) renders
+403, 404, 419, 500 and 503 as the Inertia page `Errors/ErrorPage`, in the
+URL's locale. It receives only the status code (NFR-SEC-07). JSON clients
+keep JSON errors; with `APP_DEBUG=true` a 500 shows Laravel's debug page.
 
 ## Before every pull request
 

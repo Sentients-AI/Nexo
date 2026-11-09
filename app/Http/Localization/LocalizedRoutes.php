@@ -13,7 +13,11 @@ use Illuminate\Support\Facades\Route;
  */
 final class LocalizedRoutes
 {
-    public static function group(Closure $routes): void
+    /**
+     * @param  bool  $redirectEnglishPrefix  false for a second group (routes/local.php):
+     *                                       the /en redirect is registered once, by routes/web.php.
+     */
+    public static function group(Closure $routes, bool $redirectEnglishPrefix = true): void
     {
         // /en/... is never canonical: send it to the unprefixed URL. Registered
         // first so a later catch-all storefront route cannot shadow it.
@@ -22,12 +26,14 @@ final class LocalizedRoutes
         // the redirect is always absolute and same-host. Without that,
         // /en//evil.com or /en/%2Fevil.com became "//evil.com", a
         // protocol-relative open redirect.
-        Route::get('en/{path?}', function (Request $request, ?string $path = null) {
-            $target = url('/'.ltrim($path ?? '', '/'));
-            $query = $request->getQueryString();
+        if ($redirectEnglishPrefix) {
+            Route::get('en/{path?}', function (Request $request, ?string $path = null) {
+                $target = url('/'.ltrim($path ?? '', '/'));
+                $query = $request->getQueryString();
 
-            return redirect($target.($query === null ? '' : '?'.$query), 301);
-        })->where('path', '.*');
+                return redirect($target.($query === null ? '' : '?'.$query), 301);
+            })->where('path', '.*');
+        }
 
         foreach (Locale::cases() as $locale) {
             Route::middleware('locale:'.$locale->value)

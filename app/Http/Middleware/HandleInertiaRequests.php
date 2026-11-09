@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Localization\Locale;
+use App\Http\Localization\LocalizedRoutes;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -31,6 +32,10 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'locale' => fn (): string => Locale::current()->value,
             'direction' => fn (): string => Locale::current()->direction(),
+            // hreflang alternates for the head and the locale switcher. Sent
+            // on every visit so client-side navigation never keeps the
+            // previous page's links (M3 review).
+            'alternates' => fn (): array => LocalizedRoutes::alternates($request),
         ];
     }
 }

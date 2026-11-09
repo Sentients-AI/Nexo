@@ -59,6 +59,30 @@ See [`error-handling.md`](error-handling.md). In short: never log passwords,
 tokens, API keys, full card numbers, or full request bodies for auth/payment
 endpoints.
 
+## Security headers
+
+`App\Http\Middleware\SecurityHeaders` runs first in the global stack, so
+every response gets them, error and maintenance pages included
+(NFR-SEC-08, tested in `tests/Feature/SecurityHeadersTest.php`):
+
+- **CSP** with a fresh nonce per request and no `unsafe-inline` or
+  `unsafe-eval`: `default-src 'self'`, scripts and styles from `'self'`
+  plus the nonce, `object-src 'none'`, `base-uri 'self'`,
+  `form-action 'self'`, `frame-ancestors 'none'`. Laravel's Vite helper
+  adds the nonce to `@vite` and `@fonts` tags; the `csp-nonce` meta in
+  `app.blade.php` passes it to Vite and Inertia for styles they inject.
+  While `npm run dev` runs, the Vite origin, its WebSocket and inline
+  styles are allowed (development only).
+- `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Cross-Origin-Opener-Policy: same-origin`, and a `Permissions-Policy`
+  denying camera, microphone and geolocation.
+- **HSTS** (`max-age=31536000`) on HTTPS requests outside local
+  development. Behind a TLS-terminating proxy the demo host must be a
+  trusted proxy, or requests will not count as HTTPS.
+- Adding a third-party origin (payments, analytics, images) means adding
+  it to the policy in the same PR, with a test.
+
 ## Dependency auditing
 
 - `composer audit` runs in CI and in `composer check`. A new advisory fails the

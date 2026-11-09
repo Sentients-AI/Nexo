@@ -31,6 +31,7 @@ Implementation
 | [`functional-requirements.md`](functional-requirements.md) | FR-* requirements with acceptance criteria |
 | [`non-functional-requirements.md`](non-functional-requirements.md) | NFR-*: correctness, security, performance, a11y, i18n, quality gates |
 | [`user-journeys.md`](user-journeys.md) | Customer, vendor and platform-staff workflows with failure branches |
+| [`screen-inventory.md`](screen-inventory.md) | Every customer and vendor screen, its layout, status and what it waits for |
 
 ## Superseded (history only)
 
