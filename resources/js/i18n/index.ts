@@ -46,10 +46,22 @@ interface ActiveState {
 
 const active = shallowRef<ActiveState>({ locale: FALLBACK_LOCALE, catalogue: {}, fallback: {} });
 
-/** Loads `locale` (falling back to English for unknown values) and makes it active. */
+// Counts activateLocale() calls. Only the latest call may commit, so a slow
+// first load (e.g. Arabic) cannot overwrite a newer visit that finished first.
+let latestRequest = 0;
+
+/**
+ * Loads `locale` (falling back to English for unknown values) and makes it
+ * active, unless a newer call has been made meanwhile.
+ */
 export async function activateLocale(requested: unknown): Promise<Locale> {
+    const request = ++latestRequest;
     const locale = isLocale(requested) ? requested : FALLBACK_LOCALE;
     const [catalogue, fallback] = await Promise.all([loadCatalogue(locale), loadCatalogue(FALLBACK_LOCALE)]);
+
+    if (request !== latestRequest) {
+        return locale;
+    }
 
     active.value = { locale, catalogue, fallback };
 
