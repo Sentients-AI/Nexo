@@ -13,5 +13,7 @@
         <li class="text-fg-muted" aria-hidden="true">·</li>
         <li><a class="text-fg underline-offset-4 hover:underline" href="{{ url('/dev/tokens') }}">Design tokens</a></li>
         <li><a class="text-fg underline-offset-4 hover:underline" href="{{ url('/dev/components') }}">Components</a></li>
+        <li><a class="text-fg underline-offset-4 hover:underline" href="{{ url('/dev/layouts/checkout') }}">Checkout layout</a></li>
+        <li><a class="text-fg underline-offset-4 hover:underline" href="{{ url('/dev/layouts/vendor') }}">Vendor layout</a></li>
     </ul>
 </nav>
