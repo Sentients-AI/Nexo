@@ -5,8 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>{{ config('app.name', 'Nexo') }}</title>
-@foreach (\App\Http\Localization\LocalizedRoutes::alternates() as $hreflang => $href)
-        <link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">
+{{-- Same markup and data-inertia keys as hreflangTags() in resources/js/i18n/alternates.ts, so Inertia's head manager updates these on every visit. --}}
+@foreach ($page['props']['alternates'] ?? [] as $hreflang => $href)
+        <link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}" data-inertia="hreflang-{{ $hreflang }}">
 @endforeach
 
         @fonts

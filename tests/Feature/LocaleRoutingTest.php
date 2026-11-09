@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HandleInertiaRequests;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('serves each locale under its URL prefix (NFR-I18N-04)', function (string $url, string $locale, string $direction) {
@@ -60,11 +61,30 @@ it('lists hreflang alternates for every locale plus x-default', function (string
 
     foreach (['en' => '/', 'ms' => '/ms', 'ar' => '/ar', 'x-default' => '/'] as $hreflang => $path) {
         $response->assertSee(
-            '<link rel="alternate" hreflang="'.$hreflang.'" href="'.url($path).'">',
+            '<link rel="alternate" hreflang="'.$hreflang.'" href="'.url($path).'" data-inertia="hreflang-'.$hreflang.'">',
             escape: false,
         );
     }
 })->with(['/', '/ms', '/ar']);
+
+it('shares the alternates as a prop, so client-side visits replace them', function (string $url) {
+    $this->get($url)->assertInertia(fn (Assert $page) => $page->where('alternates', [
+        'en' => url('/'),
+        'ms' => url('/ms'),
+        'ar' => url('/ar'),
+        'x-default' => url('/'),
+    ]));
+})->with(['/', '/ms', '/ar']);
+
+it('sends the alternates on Inertia (client-side) visits too', function () {
+    $version = app(HandleInertiaRequests::class)->version(request());
+
+    $this->get('/ms', ['X-Inertia' => 'true', 'X-Inertia-Version' => (string) $version])
+        ->assertOk()
+        ->assertJsonPath('component', 'Storefront/Home')
+        ->assertJsonPath('props.alternates.ar', url('/ar'))
+        ->assertJsonPath('props.alternates.x-default', url('/'));
+});
 
 // One request per test: Laravel's Vite service remembers which assets it
 // has preloaded and skips them on later requests in the same application.

@@ -2,11 +2,14 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { activateLocale } from './i18n';
+import { hreflangTags } from './i18n/alternates';
 
 const pages = import.meta.glob<DefineComponent>('./pages/**/*.vue');
 
 void createInertiaApp({
     title: (title) => (title ? `${title} · Nexo` : 'Nexo'),
+    // Replaces the server-rendered hreflang links on every visit.
+    serverHead: (page) => hreflangTags(page.props.alternates),
     resolve: async (name, page) => {
         const component = pages[`./pages/${name}.vue`];
 
