@@ -1,0 +1,22 @@
+{
+    "layout": {
+        "title": "Pusat penjual",
+        "menu": "Menu kedai",
+        "store": "Kedai anda",
+        "soon": "akan datang"
+    },
+    "nav": {
+        "dashboard": "Papan pemuka",
+        "orders": "Pesanan",
+        "products": "Produk",
+        "stock": "Stok",
+        "earnings": "Pendapatan",
+        "team": "Pasukan",
+        "settings": "Tetapan"
+    },
+    "dashboard": {
+        "title": "Papan pemuka",
+        "empty_title": "Belum ada apa-apa di sini",
+        "empty_body": "Pesanan, amaran stok dan pendapatan akan dipaparkan di sini selepas kedai anda disediakan."
+    }
+}

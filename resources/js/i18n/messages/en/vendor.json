@@ -1,0 +1,22 @@
+{
+    "layout": {
+        "title": "Seller centre",
+        "menu": "Store menu",
+        "store": "Your store",
+        "soon": "coming soon"
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "orders": "Orders",
+        "products": "Products",
+        "stock": "Stock",
+        "earnings": "Earnings",
+        "team": "Team",
+        "settings": "Settings"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "empty_title": "Nothing here yet",
+        "empty_body": "Orders, stock alerts and earnings will appear here once your store is set up."
+    }
+}

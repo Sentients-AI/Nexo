@@ -3,5 +3,17 @@
         "title": "Home",
         "eyebrow": "Marketplace · Malaysia",
         "tagline": "The storefront is on its way."
+    },
+    "header": {
+        "cart": {
+            "one": "Cart, {count} item",
+            "other": "Cart, {count} items"
+        }
+    },
+    "checkout": {
+        "title": "Checkout",
+        "secure": "Secure checkout",
+        "preview_title": "Checkout steps are coming",
+        "preview_body": "Address, shipping and payment will appear here once the cart and payments are built."
     }
 }

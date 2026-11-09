@@ -47,5 +47,9 @@
             "title": "Kami akan kembali sebentar lagi",
             "description": "Nexo sedang diselenggara. Sila semak semula sebentar lagi."
         }
+    },
+    "layout": {
+        "skip_to_content": "Langkau ke kandungan",
+        "language": "Bahasa"
     }
 }

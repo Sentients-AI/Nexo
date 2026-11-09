@@ -6,6 +6,13 @@ export type Direction = 'ltr' | 'rtl';
 
 export const FALLBACK_LOCALE: Locale = 'en';
 
+/** Each language's name in itself, as language switchers show it. Not translated. */
+export const LOCALE_NAMES: Record<Locale, string> = {
+    en: 'English',
+    ms: 'Bahasa Melayu',
+    ar: 'العربية',
+};
+
 /** Displayed dates and times are always Malaysian time (NFR-I18N-03, ADR-0018). */
 export const TIME_ZONE = 'Asia/Kuala_Lumpur';
 
