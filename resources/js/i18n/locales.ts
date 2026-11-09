@@ -25,6 +25,11 @@ export function directionOf(locale: Locale): Direction {
     return locale === 'ar' ? 'rtl' : 'ltr';
 }
 
+/** The storefront home URL for `locale`: "/" for English, "/ms" or "/ar" otherwise. */
+export function homePath(locale: Locale): string {
+    return locale === FALLBACK_LOCALE ? '/' : `/${locale}`;
+}
+
 export function intlTag(locale: Locale): string {
     return INTL_TAGS[locale];
 }

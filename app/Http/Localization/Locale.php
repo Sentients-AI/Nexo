@@ -24,6 +24,20 @@ enum Locale: string
         return self::tryFrom(app()->getLocale()) ?? self::fallback();
     }
 
+    /** The locale whose prefix starts `$path` (e.g. "ar/products"), else the fallback. */
+    public static function fromPath(string $path): self
+    {
+        $segment = explode('/', trim($path, '/'), 2)[0];
+
+        foreach (self::cases() as $locale) {
+            if ($locale->prefix() !== '' && $locale->prefix() === $segment) {
+                return $locale;
+            }
+        }
+
+        return self::fallback();
+    }
+
     public function direction(): string
     {
         return $this === self::Arabic ? 'rtl' : 'ltr';

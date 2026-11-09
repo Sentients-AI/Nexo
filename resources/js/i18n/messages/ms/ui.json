@@ -23,5 +23,29 @@
         "previous": "Sebelumnya",
         "next": "Seterusnya",
         "page": "Halaman {page}"
+    },
+    "errors": {
+        "code": "Ralat {status}",
+        "home": "Pergi ke halaman utama",
+        "forbidden": {
+            "title": "Anda tidak boleh membuka halaman ini",
+            "description": "Anda tidak mempunyai kebenaran untuk melihatnya."
+        },
+        "not_found": {
+            "title": "Halaman tidak dijumpai",
+            "description": "Halaman ini mungkin telah dipindahkan, atau pautannya salah."
+        },
+        "page_expired": {
+            "title": "Halaman ini telah tamat tempoh",
+            "description": "Demi keselamatan anda, borang ini telah tamat masa. Kembali, muat semula halaman dan cuba lagi."
+        },
+        "server_error": {
+            "title": "Berlaku masalah",
+            "description": "Ralat yang tidak dijangka berlaku di pihak kami. Sila cuba lagi dalam beberapa minit."
+        },
+        "unavailable": {
+            "title": "Kami akan kembali sebentar lagi",
+            "description": "Nexo sedang diselenggara. Sila semak semula sebentar lagi."
+        }
     }
 }
