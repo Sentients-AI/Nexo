@@ -19,5 +19,8 @@ parameters:
         - tests/CreatesApplication.php
         - tests/TestCase.php
         - tests/Support
+        - tests/Concurrency/Harness
+        - tests/Concurrency/Scenarios
+        - tests/Concurrency/bin
 
     tmpDir: build/phpstan

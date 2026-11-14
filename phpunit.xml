@@ -16,6 +16,10 @@
         <testsuite name="Platform">
             <directory>tests/Platform</directory>
         </testsuite>
+        <!-- Real parallel worker processes on committed fixtures. -->
+        <testsuite name="Concurrency">
+            <directory>tests/Concurrency</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
