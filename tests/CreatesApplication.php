@@ -7,7 +7,9 @@ namespace Tests;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Bootstrap\LoadConfiguration;
+use Illuminate\Testing\ParallelTesting;
 use Tests\Support\Database\GuardInput;
+use Tests\Support\Database\LockConnection;
 use Tests\Support\Database\TestDatabaseGuard;
 
 /**
@@ -58,9 +60,24 @@ trait CreatesApplication
 
         // Again on the final configuration, in case a provider changed it. G2
         // is judged on the environment the configuration was loaded as.
-        TestDatabaseGuard::enforce(
-            GuardInput::fromApplication($app)->withAppEnv(is_string($loadedAs) ? $loadedAs : null),
-        );
+        $loadedAs = is_string($loadedAs) ? $loadedAs : null;
+
+        TestDatabaseGuard::enforce(GuardInput::fromApplication($app)->withAppEnv($loadedAs));
+
+        // Under --parallel, Laravel's own set-up callback (registered while
+        // the application booted, so it runs first) switches only the default
+        // connection to nexo_testing_test_<N>. Follow it with the lock
+        // connection, then guard the switched configuration.
+        $app->make(ParallelTesting::class)->setUpTestCase(static function () use ($app, $loadedAs): void {
+            $config = $app->make('config');
+            $database = $config->get('database.connections.'.$config->get('database.default').'.database');
+
+            if (is_string($database)) {
+                LockConnection::pointAt($app, $database);
+            }
+
+            TestDatabaseGuard::enforce(GuardInput::fromApplication($app)->withAppEnv($loadedAs));
+        });
 
         return $app;
     }

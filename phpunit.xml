@@ -11,6 +11,11 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <!-- Test-platform proofs: guard subprocesses, explicitly named probe
+             databases. Run sequentially, never in parallel. -->
+        <testsuite name="Platform">
+            <directory>tests/Platform</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -22,7 +27,10 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
+        <!-- Unit tests boot no application. Feature and concurrency tests use the
+             database store; its locks use mysql_locks (ADR-0009 §3). -->
+        <env name="CACHE_STORE" value="database"/>
+        <env name="DB_CACHE_LOCK_CONNECTION" value="mysql_locks"/>
         <!-- MySQL for every database test (ADR-0009). Not forced: the process
              environment wins, so CI can set DB_USERNAME/DB_PASSWORD. Anything
              unsafe is rejected by the test database guard (tests/bootstrap.php). -->

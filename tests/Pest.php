@@ -19,3 +19,8 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+// Platform proofs manage their own, explicitly named probe databases and must
+// not run inside a test transaction (CREATE DATABASE commits implicitly).
+pest()->extend(TestCase::class)
+    ->in('Platform');
