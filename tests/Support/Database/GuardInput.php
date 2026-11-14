@@ -19,6 +19,9 @@ final readonly class GuardInput
      * @param  array<string, array<string, mixed>>|null  $connections  Connection
      *                                                                 configurations by name, or null before the application has loaded
      *                                                                 its configuration (G3-G5 are then not evaluated).
+     * @param  bool  $parallel  Running under Laravel's parallel runner.
+     * @param  string|null  $parallelToken  This worker's TEST_TOKEN; null in the
+     *                                      runner's parent process and when not parallel.
      */
     public function __construct(
         public bool $configCached,
@@ -26,6 +29,8 @@ final readonly class GuardInput
         public ?string $appEnv,
         public ?string $defaultConnection = null,
         public ?array $connections = null,
+        public bool $parallel = false,
+        public ?string $parallelToken = null,
     ) {}
 
     /**
@@ -39,6 +44,8 @@ final readonly class GuardInput
             configCached: is_file($path) || is_file($basePath.'/bootstrap/cache/config.php'),
             configCachePath: $path,
             appEnv: self::env('APP_ENV'),
+            parallel: self::parallel(),
+            parallelToken: self::parallelToken(),
         );
     }
 
@@ -65,12 +72,22 @@ final readonly class GuardInput
             appEnv: is_string($env = $app['env'] ?? null) ? $env : null,
             defaultConnection: $default,
             connections: self::connectionsUsedByTests($config, $default, $all),
+            parallel: self::parallel(),
+            parallelToken: self::parallelToken(),
         );
     }
 
     public function withAppEnv(?string $appEnv): self
     {
-        return new self($this->configCached, $this->configCachePath, $appEnv, $this->defaultConnection, $this->connections);
+        return new self(
+            $this->configCached,
+            $this->configCachePath,
+            $appEnv,
+            $this->defaultConnection,
+            $this->connections,
+            $this->parallel,
+            $this->parallelToken,
+        );
     }
 
     /**
@@ -134,10 +151,28 @@ final readonly class GuardInput
         return $absolute ? $env : $basePath.'/'.$env;
     }
 
+    private static function parallel(): bool
+    {
+        $value = self::env('LARAVEL_PARALLEL_TESTING');
+
+        return $value !== null && $value !== '' && $value !== '0';
+    }
+
+    private static function parallelToken(): ?string
+    {
+        if (! self::parallel()) {
+            return null;
+        }
+
+        $token = self::env('TEST_TOKEN');
+
+        return $token === null || $token === '' ? null : $token;
+    }
+
     private static function env(string $key): ?string
     {
         $value = $_SERVER[$key] ?? $_ENV[$key] ?? getenv($key);
 
-        return is_string($value) ? $value : null;
+        return is_string($value) || is_int($value) ? (string) $value : null;
     }
 }

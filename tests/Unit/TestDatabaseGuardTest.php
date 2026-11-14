@@ -164,6 +164,28 @@ it('G5 rejects a default connection that is not configured', function (): void {
     expect(ruleIds(guardInput(default: 'missing')))->toBe(['G5']);
 });
 
+it('under --parallel, accepts only nexo_testing and this worker database', function (): void {
+    $parallel = static fn (string $database, ?string $token): GuardInput => new GuardInput(
+        configCached: false,
+        configCachePath: null,
+        appEnv: 'testing',
+        defaultConnection: 'mysql',
+        connections: ['mysql' => mysqlConnection(['database' => $database])],
+        parallel: true,
+        parallelToken: $token,
+    );
+
+    // Before the switch (worker) and in the runner's parent process.
+    expect(TestDatabaseGuard::violations($parallel('nexo_testing', '3')))->toBe([])
+        ->and(TestDatabaseGuard::violations($parallel('nexo_testing', null)))->toBe([])
+        // After the switch.
+        ->and(TestDatabaseGuard::violations($parallel('nexo_testing_test_3', '3')))->toBe([])
+        // Another worker's database, or a base that would derive an unguarded name.
+        ->and(ruleIds($parallel('nexo_testing_test_4', '3')))->toBe(['G5'])
+        ->and(ruleIds($parallel('nexo_testing_test_3', null)))->toBe(['G5'])
+        ->and(ruleIds($parallel('nexo_testing_test_9001', '1')))->toBe(['G5']);
+});
+
 it('checks every connection, not only the default', function (): void {
     $input = guardInput([
         'mysql' => mysqlConnection(),

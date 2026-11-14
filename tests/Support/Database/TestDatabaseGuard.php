@@ -15,6 +15,8 @@ namespace Tests\Support\Database;
  */
 final class TestDatabaseGuard
 {
+    public const string BASE_DATABASE = 'nexo_testing';
+
     /** `D`: `$` must not match before a trailing newline. */
     public const string DATABASE_PATTERN = '/^nexo_testing(_test_[1-9][0-9]*)?$/D';
 
@@ -55,6 +57,10 @@ final class TestDatabaseGuard
                 $label = 'connection ['.$name.($part === '' ? '' : '.'.$part).']';
 
                 array_push($violations, ...self::connectionViolations($label, $config));
+
+                if ($input->parallel) {
+                    array_push($violations, ...self::parallelViolations($label, $config, $input->parallelToken));
+                }
             }
         }
 
@@ -133,6 +139,33 @@ final class TestDatabaseGuard
         }
 
         return $violations;
+    }
+
+    /**
+     * Under --parallel, Laravel creates (and with --recreate-databases or
+     * --drop-databases, drops) `<database>_test_<N>` before any later check
+     * can run. So the database must be exactly `nexo_testing`, which makes
+     * every derived name `nexo_testing_test_<N>`, or, after the switch, this
+     * worker's own `nexo_testing_test_<token>`.
+     *
+     * @param  array<string, mixed>  $config
+     * @return list<string>
+     */
+    private static function parallelViolations(string $label, array $config, ?string $token): array
+    {
+        $database = $config['database'] ?? null;
+        $allowed = [self::BASE_DATABASE];
+
+        if ($token !== null) {
+            $allowed[] = self::BASE_DATABASE.'_test_'.$token;
+        }
+
+        if (in_array($database, $allowed, true)) {
+            return [];
+        }
+
+        return ['G5 '.$label.' database '.self::show($database).' under --parallel must be '
+            .implode(' or ', array_map(self::show(...), $allowed))];
     }
 
     private static function show(mixed $value): string
