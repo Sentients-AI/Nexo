@@ -14,5 +14,13 @@ parameters:
         - database
         - routes
         - public/index.php
+        # Test infrastructure that guards the test database (ADR-0009 §3a).
+        - tests/bootstrap.php
+        - tests/CreatesApplication.php
+        - tests/TestCase.php
+        - tests/Support
+        - tests/Concurrency/Harness
+        - tests/Concurrency/Scenarios
+        - tests/Concurrency/bin
 
     tmpDir: build/phpstan

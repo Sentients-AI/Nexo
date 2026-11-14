@@ -20,8 +20,11 @@ the repository [`SECURITY.md`](../../SECURITY.md).
 
 - `APP_ENV` and `APP_DEBUG` are environment-driven. `APP_DEBUG=true` only in
   local/testing; production runs with `APP_DEBUG=false`.
-- Local and test databases are never a production database. The test suite is
-  pinned to in-memory SQLite in `phpunit.xml`.
+- Local and test databases are never a production database. Tests run only
+  against `nexo_testing` (or `nexo_testing_test_<N>` under `--parallel`) on an
+  allowlisted local host; the test database guard aborts the run otherwise
+  (ADR-0009 §3a, `docs/engineering/testing.md`). In CI the tests connect as a
+  user privileged only on `nexo\_testing%`.
 - Destructive or money-touching operations are tested against a staging database
   that is not production.
 

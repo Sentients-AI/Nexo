@@ -13,9 +13,10 @@ for where the codebase is headed.
 
 > **Status:** Phase 3 frontend foundation (milestones M1–M5) is merged. The
 > marketplace business capabilities (accounts, vendor onboarding, catalogue,
-> split checkout, payments) are not built yet. The next milestone (M6:
-> customer auth, typed page contracts, vendor context, admin panel, MySQL
-> tests) waits on ADR-0009, ADR-0011 and ADR-0018.
+> split checkout, payments) are not built yet. Every database test runs on
+> MySQL behind a test database guard, with a process-based concurrency
+> harness (ADR-0009). Identity, typed page contracts, vendor context and the
+> admin panel wait on ADR-0010, ADR-0011 and ADR-0018.
 
 ## What exists today
 
@@ -38,7 +39,7 @@ Storefront and vendor code are kept apart (dependency rule F1).
 | Framework | Laravel 13, Inertia 3, Vue 3 |
 | Styling | Tailwind CSS 4 over design tokens (`resources/css/tokens.css`) |
 | Build | Vite 8 |
-| Database  | MySQL / MariaDB (dev & prod); SQLite in-memory (tests, until ADR-0009) |
+| Database  | MySQL 8.4 everywhere, including tests (ADR-0009); MySQL 8.0 tolerated locally |
 | Tests     | Pest 5 (PHP), Vitest + Vue Test Utils + axe-core (frontend) |
 | Formatting | Laravel Pint |
 | Static analysis | PHPStan + Larastan (level 6), `vue-tsc` |
@@ -47,10 +48,10 @@ Storefront and vendor code are kept apart (dependency rule F1).
 ## Prerequisites
 
 - PHP **8.5** with the standard Laravel extensions (`mbstring`, `pdo`,
-  `pdo_mysql` / `pdo_sqlite`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`,
+  `pdo_mysql`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`,
   `bcmath`, `fileinfo`)
 - [Composer](https://getcomposer.org/) 2
-- MySQL or MariaDB (local marketplace database)
+- MySQL 8.4 (8.0 tolerated locally), for the development database `nexo` and the test database `nexo_testing`
 - Node.js **24** (`^24.15`, see `.nvmrc`) and npm. `engine-strict` is on, so
   `npm ci` fails on any other Node version.
 
@@ -75,8 +76,16 @@ Create the database referenced by `.env` (`nexo` by default), set
 php artisan migrate
 ```
 
-The test suite does **not** use this database — it runs against in-memory SQLite
-(see `phpunit.xml`), so no test database setup is required.
+The test suite never uses this database. It runs against `nexo_testing`
+(see `phpunit.xml`), which you create once:
+
+```sh
+mysql -uroot -h127.0.0.1 -e "CREATE DATABASE nexo_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
+```
+
+A guard refuses to run tests against any other database, host or
+environment, and against a cached configuration. See
+[`docs/engineering/testing.md`](docs/engineering/testing.md#database).
 
 ### Front-end assets
 

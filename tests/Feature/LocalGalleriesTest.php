@@ -3,21 +3,15 @@
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
- * Boots a fresh application as if APP_ENV were $environment, so the
- * environment gate in bootstrap/app.php runs for real.
+ * Boots a fresh application whose runtime environment is $environment, so the
+ * environment gate in bootstrap/app.php runs for real. The process stays
+ * APP_ENV=testing, so configuration is loaded and guarded as testing
+ * (ADR-0009 §3a, G2).
  */
 function bootAs(string $environment): void
 {
-    $_ENV['APP_ENV'] = $_SERVER['APP_ENV'] = $environment;
-    putenv("APP_ENV={$environment}");
-
-    test()->refreshApplication();
+    test()->rebootSimulatingEnvironment($environment);
 }
-
-afterEach(function () {
-    $_ENV['APP_ENV'] = $_SERVER['APP_ENV'] = 'testing';
-    putenv('APP_ENV=testing');
-});
 
 it('is not routed outside the local environment', function (string $environment, string $url) {
     bootAs($environment);

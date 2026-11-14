@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
     <testsuites>
@@ -10,6 +10,15 @@
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+        </testsuite>
+        <!-- Test-platform proofs: guard subprocesses, explicitly named probe
+             databases. Run sequentially, never in parallel. -->
+        <testsuite name="Platform">
+            <directory>tests/Platform</directory>
+        </testsuite>
+        <!-- Real parallel worker processes on committed fixtures. -->
+        <testsuite name="Concurrency">
+            <directory>tests/Concurrency</directory>
         </testsuite>
     </testsuites>
     <source>
@@ -22,10 +31,21 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Unit tests boot no application. Feature and concurrency tests use the
+             database store; its locks use mysql_locks (ADR-0009 §3). -->
+        <env name="CACHE_STORE" value="database"/>
+        <env name="DB_CACHE_LOCK_CONNECTION" value="mysql_locks"/>
+        <!-- MySQL for every database test (ADR-0009). Not forced: the process
+             environment wins, so CI can set DB_USERNAME/DB_PASSWORD. Anything
+             unsafe is rejected by the test database guard (tests/bootstrap.php). -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_DATABASE" value="nexo_testing"/>
         <env name="DB_URL" value=""/>
+        <env name="DB_SOCKET" value=""/>
+        <env name="DB_CHARSET" value="utf8mb4"/>
+        <env name="DB_COLLATION" value="utf8mb4_0900_ai_ci"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

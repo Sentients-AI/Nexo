@@ -33,7 +33,7 @@ The template is [`adr/ADR-TEMPLATE.md`](adr/ADR-TEMPLATE.md) (ADR-0006). Propose
 | [0006](adr/0006-adr-process-v2.md) | Nexo 2.0 ADR template and statuses | Accepted (brief) |
 | [0007](adr/0007-product-positioning-currency-and-locales.md) | Portfolio marketplace; MYR; EN primary with AR/MS | Accepted (D-4, D-5) |
 | [0008](adr/0008-repository-and-frontend-stack.md) | This repository; Vue 3 + Inertia + TS | Accepted (D-1, D-2) |
-| [0009](adr/0009-runtime-and-persistence-baseline.md) | Laravel 13 / PHP 8.5; MySQL 8.4 everywhere, including tests | Proposed (D-3) |
+| [0009](adr/0009-runtime-and-persistence-baseline.md) | Laravel 13 / PHP 8.5; MySQL 8.4 everywhere, including tests | Accepted (M6-D-02, M6-D-03, 2026-11-14) |
 | [0010](adr/0010-modular-monolith-and-dependency-rules.md) | Modular monolith with enforced contracts | Proposed |
 | [0011](adr/0011-identity-roles-and-vendor-isolation.md) | Identity, roles and fail-closed vendor isolation | Proposed |
 | [0012](adr/0012-order-group-and-vendor-orders.md) | OrderGroup + VendorOrder state machines | Proposed |
