@@ -1,8 +1,12 @@
 # Database & Migration Conventions
 
-Nexo runs on MySQL/MariaDB in development and production; the test suite runs on
-in-memory SQLite. Write migrations and queries that work on both — avoid
-vendor-specific SQL unless it is guarded and justified.
+Nexo runs on MySQL 8.4 in every environment, including tests (ADR-0009). Local
+development tolerates MySQL 8.0. Use InnoDB, strict mode and `utf8mb4`
+(`utf8mb4_0900_ai_ci`). Code that relies on locking uses explicit
+`SELECT … FOR UPDATE` or conditional `UPDATE … WHERE`, never read-then-write
+without a lock; prove it with a concurrency test (`docs/engineering/testing.md`).
+
+Tests run against `nexo_testing`, never the development database `nexo`.
 
 The marketplace schema is **not** designed yet. This document sets the rules
 future migrations follow; it does not change existing tables.
