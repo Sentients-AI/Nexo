@@ -75,8 +75,9 @@ The table records which criterion separates each module. Capabilities that share
           │                                       │ events (VendorOrderPaid, Cancelled, Completed, ReturnReceived…)
           ▼                                       ▼
      ┌─────────┐   events (captured, refunded,  ┌─────────┐
-     │ Finance │◄─ disputed, fees) ─────────────│Payments │──► contract: Ordering.markGroupPaid (inside the
-     └─────────┘                                └─────────┘    payment-success transaction, see note)
+     │ Finance │◄─ disputed, fees) ─────────────│Payments │──► port: Payments.Contracts.OrderPayments::markPaid,
+     └─────────┘                                └─────────┘    implemented by Ordering (inside the payment-success
+                                                               transaction, see note; no Payments → Ordering dependency)
      Search, Notifications, Engagement(rating aggregates) ◄── events from all of the above
 ```
 
@@ -84,8 +85,8 @@ The table records which criterion separates each module. Capabilities that share
 
 It is orchestrated by `Payments\Application\HandlePaymentSucceeded`, which calls these contracts within one database transaction:
 
-- `Ordering\Contracts\OrderPayments::markPaid(groupId, attemptRef)`;
-- that, in turn, calls Inventory, Promotions and Loyalty contracts.
+- `Payments\Contracts\OrderPayments::markPaid(groupId, attemptRef)`, a port declared by Payments and implemented by Ordering (ADR-0010 §4, `dependency-rules.md` footnote 2);
+- Ordering's implementation, in turn, calls Inventory, Promotions and Loyalty contracts.
 
 Finance is **not** in this transaction. It posts from the outbox event, because a ledger lag of seconds is acceptable, whereas a lost posting is not, and the outbox guarantees the posting is never lost.
 
