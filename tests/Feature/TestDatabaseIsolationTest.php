@@ -76,3 +76,11 @@ it('starts with no lock left over by the previous test', function (): void {
     expect(DB::connection('mysql_locks')->table('cache_locks')->count())->toBe(0)
         ->and(Cache::lock('isolation-leak-probe', 300)->get())->toBeTrue();
 })->depends('it leaves a lock behind on purpose');
+
+it('keeps a rebooted application on this process\'s database', function (): void {
+    $this->rebootSimulatingEnvironment('production');
+
+    expect(app()->environment())->toBe('production')
+        ->and(LockConnection::serverDatabase(DB::connection()))->toBe(expectedTestDatabase())
+        ->and(LockConnection::serverDatabase(LockConnection::storeConnection(app())))->toBe(expectedTestDatabase());
+});

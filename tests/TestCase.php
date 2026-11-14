@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\ParallelTesting;
 use Tests\Support\Database\LockConnection;
 
 abstract class TestCase extends BaseTestCase
@@ -39,6 +40,11 @@ abstract class TestCase extends BaseTestCase
         } finally {
             $this->simulatedEnvironment = null;
         }
+
+        // A new application starts on the base database. Under --parallel,
+        // re-run the per-test switch (Laravel's, then ours) so it uses this
+        // worker's nexo_testing_test_<N>, as setUp() did for the first one.
+        ParallelTesting::callSetUpTestCaseCallbacks($this);
     }
 
     private function usesTestDatabase(): bool

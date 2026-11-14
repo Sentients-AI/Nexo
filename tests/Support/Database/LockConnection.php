@@ -65,6 +65,17 @@ final class LockConnection
             throw new RuntimeException("Refusing to clean locks in '{$lockDatabase}': not a test database.");
         }
 
+        // Under --parallel, both connections being on the same database is not
+        // enough: it must be this worker's own.
+        $token = self::parallelToken();
+
+        if ($token !== null && $lockDatabase !== TestDatabaseGuard::BASE_DATABASE.'_test_'.$token) {
+            throw new RuntimeException(
+                "Refusing to clean locks in '{$lockDatabase}': parallel worker {$token} must use '"
+                .TestDatabaseGuard::BASE_DATABASE.'_test_'.$token."'."
+            );
+        }
+
         return $locks->table(self::table($app))->delete();
     }
 
@@ -102,6 +113,18 @@ final class LockConnection
         }
 
         return $name;
+    }
+
+    private static function parallelToken(): ?string
+    {
+        $parallel = $_SERVER['LARAVEL_PARALLEL_TESTING'] ?? $_ENV['LARAVEL_PARALLEL_TESTING'] ?? getenv('LARAVEL_PARALLEL_TESTING');
+        $token = $_SERVER['TEST_TOKEN'] ?? $_ENV['TEST_TOKEN'] ?? getenv('TEST_TOKEN');
+
+        if (! is_scalar($parallel) || in_array((string) $parallel, ['', '0'], true) || ! is_scalar($token) || (string) $token === '') {
+            return null;
+        }
+
+        return (string) $token;
     }
 
     public static function table(Application $app): string

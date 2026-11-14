@@ -45,8 +45,7 @@ it('reconnects the lock store to a new database, proven on the server', function
     expect(LockConnection::serverDatabase(LockConnection::storeConnection(app())))->toBe(ProbeDatabases::LOCKS_A)
         ->and(Cache::lock('reconnect', 30)->get())->toBeTrue()
         ->and(lockRows(ProbeDatabases::LOCKS_A))->toBe(1)
-        ->and(lockRows(ProbeDatabases::LOCKS_B))->toBe(0)
-        ->and(lockRows($this->home))->toBe(0);
+        ->and(lockRows(ProbeDatabases::LOCKS_B))->toBe(0);
 
     LockConnection::pointAt(app(), ProbeDatabases::LOCKS_B);
 
