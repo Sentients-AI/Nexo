@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
@@ -18,11 +19,20 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Locks commit on mysql_locks, outside the per-test transaction, so
-        // they would leak into the next test (ADR-0009 §3).
-        if ($this->usesTestDatabase()) {
-            $this->beforeApplicationDestroyed(fn () => LockConnection::clean($this->app));
-        }
+        $this->beforeApplicationDestroyed(function (): void {
+            // Locks commit on mysql_locks, outside the per-test transaction,
+            // so they would leak into the next test (ADR-0009 §3).
+            if ($this->usesTestDatabase()) {
+                LockConnection::clean($this->app);
+            }
+
+            // RefreshDatabase disconnects only the default connection, and the
+            // cleanup above reconnects it. Close everything this application
+            // opened; otherwise each test leaves connections open until PHP's
+            // cycle collector frees the application, and four parallel
+            // processes exhaust MySQL's max_connections.
+            self::closeConnections($this->app);
+        });
     }
 
     /**
@@ -35,6 +45,9 @@ abstract class TestCase extends BaseTestCase
     {
         $this->simulatedEnvironment = $environment;
 
+        // The replaced application's connections would otherwise stay open.
+        self::closeConnections($this->app);
+
         try {
             $this->refreshApplication();
         } finally {
@@ -45,6 +58,19 @@ abstract class TestCase extends BaseTestCase
         // re-run the per-test switch (Laravel's, then ours) so it uses this
         // worker's nexo_testing_test_<N>, as setUp() did for the first one.
         ParallelTesting::callSetUpTestCaseCallbacks($this);
+    }
+
+    private static function closeConnections(?Application $app): void
+    {
+        if ($app === null) {
+            return;
+        }
+
+        $db = $app->make('db');
+
+        foreach (array_keys($db->getConnections()) as $name) {
+            $db->purge($name);
+        }
     }
 
     private function usesTestDatabase(): bool

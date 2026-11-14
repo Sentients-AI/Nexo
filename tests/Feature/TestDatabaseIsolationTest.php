@@ -84,3 +84,15 @@ it('keeps a rebooted application on this process\'s database', function (): void
         ->and(LockConnection::serverDatabase(DB::connection()))->toBe(expectedTestDatabase())
         ->and(LockConnection::serverDatabase(LockConnection::storeConnection(app())))->toBe(expectedTestDatabase());
 });
+
+it('starts with no connection left open by an earlier test', function (): void {
+    // Each worker has its own database, so this counts only this process's
+    // connections: the test's own default connection, plus mysql_locks once
+    // the parallel set-up has pointed it here. Leaked connections from
+    // earlier tests would add one or two per test until MySQL refuses more.
+    $open = (int) DB::selectOne(
+        "SELECT COUNT(*) AS n FROM information_schema.processlist WHERE db = DATABASE() AND command <> 'Daemon'"
+    )->n;
+
+    expect($open)->toBeLessThanOrEqual(2);
+})->repeat(10);
