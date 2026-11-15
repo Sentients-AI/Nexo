@@ -50,7 +50,7 @@ tests/
 | Flow | Path |
 |---|---|
 | Checkout | Ordering.PlaceCheckout → (TX: OrderGroup + VendorOrders + Inventory.reserve + Promotions.hold + Loyalty.hold + outbox) → Payments.CreateAttempt → provider |
-| Payment | webhook → Payments.provider_events → job → TX: attempt succeeded + Payments.Contracts.OrderPayments::markPaid, implemented by Ordering (+ Inventory.consume, Promotions.confirm, Loyalty.confirm) + outbox → Finance posts capture; Notifications; Search |
+| Payment | webhook → Payments.provider_events → job → TX: attempt succeeded + Payments\Contracts\OrderPayments::markPaid, implemented by Ordering (+ Inventory.consume, Promotions.confirm, Loyalty.confirm) + outbox → Finance posts capture; Notifications; Search |
 | Fulfilment | Vendor UI → Ordering transitions → outbox → Notifications; completion → Finance maturity, Loyalty award |
 | Refund | Ordering (cancel/return) or Finance staff → Payments.RequestRefund → provider → webhook → Finance posts refund; Loyalty/Promotions adjust |
 | Payout | Scheduler → Finance.RunPayouts (idempotent) → ledger postings → Notifications |
