@@ -1,6 +1,6 @@
 # Dependency Rules
 
-- **Status:** Draft for owner review (Phase 1). This document is normative once ADR-0010 is accepted. Every rule below becomes a Pest `arch()` test in Phase 3.
+- **Status:** Normative (ADR-0010, accepted 2026-11-15 under M6-D-04). Each rule is either enforced by an architecture test in `tests/Arch/`, introduced by M1 Slice B, or deferred with a named trigger (§6). Until Slice B lands, only L6 and L7 are enforced (`tests/Unit/ArchTest.php`).
 - **Date:** 2026-11-01
 
 ## 1. Layer rules (inside every module)
@@ -16,8 +16,8 @@ Domain ──► Shared only
 |---|---|---|
 | L1 | `Domain` does not import `Illuminate\Http`, `Illuminate\Support\Facades\Request`, `Inertia\`, `Filament\`, `Livewire\`, `Stripe\` | `arch()->expect('App\Modules\*\Domain')->not->toUse([...])` |
 | L2 | `Application` does not import `Http`, `Filament`, `Inertia` | similar |
-| L3 | Controllers do not use `DB::`, `Model::create/update/save/delete` or status setters; they call one Application use case | `expect('App\Modules\*\Http\Controllers')->not->toUse('Illuminate\Support\Facades\DB')` plus a custom expectation |
-| L4 | Only state-machine classes assign `status` attributes | custom expectation over `->status =` / `update(['status'` patterns (PHPStan rule if arch is insufficient) |
+| L3 | Controllers do not use `DB::`, `Model::create/update/save/delete` or status setters; they call one Application use case | `expect('App\Modules\*\Http\Controllers')->not->toUse('Illuminate\Support\Facades\DB')`. The method-call part is deferred (§6) |
+| L4 | Only state-machine classes assign `status` attributes | Deferred (§6): needs a PHPStan rule, because arch tests cannot see assignments |
 | L5 | Provider SDKs (`Stripe\`) are used only in `Payments\Infrastructure` | arch |
 | L6 | `env()` is used only in `config/` | existing rule |
 | L7 | No debug helpers (`dd`, `dump`, `ray`, `var_dump`) | existing preset |
@@ -28,10 +28,10 @@ Domain ──► Shared only
 |---|---|
 | M1 | A module may import another module **only** from `App\Modules\<Other>\Contracts\*`. |
 | M2 | Every module may import `App\Shared\*`. `Shared` imports no module. |
-| M3 | No Eloquent relationship, join, or raw query from module A touches a table owned by module B. The exceptions are listed in §4. |
+| M3 | No Eloquent relationship, join, or raw query from module A touches a table owned by module B. The exceptions are listed in §4. Deferred (§6). |
 | M4 | Allowed synchronous dependencies are only those in the matrix below (✓). Anything else is either an event subscription or a design error. |
 | M5 | No cycles in synchronous dependencies. The matrix is acyclic; the arch test computes the graph. |
-| M6 | Events are published only by their owning module (`<Module>\Contracts\Events`), and are consumed through explicit subscriptions. |
+| M6 | Events are published only by their owning module (`<Module>\Contracts\Events`), and are consumed through explicit subscriptions. Deferred (§6). |
 
 ### Synchronous dependency matrix (row → may call contracts of column)
 
@@ -42,8 +42,8 @@ Domain ──► Shared only
 | **Catalogue** | | ✓ | | | | | | | | | | | |
 | **Inventory** | | ✓ | ✓ | | | | | | | | | | |
 | **Shipping** | | ✓ | | | | | | | | | | | |
-| **Ordering** | ✓ | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓¹ | ✓ | ✓ | | | |
-| **Payments** | | | | | | ✓² | | | | | | | |
+| **Ordering** | ✓ | ✓ | ✓ | ✓ | ✓ | | ✓² | ✓¹ | ✓ | ✓ | | | |
+| **Payments** | | | | | | | | | | | | | |
 | **Finance** | | ✓ | | | | ³ | ³ | | | | | | |
 | **Promotions** | | | ✓ | | | | | | | | | | |
 | **Loyalty** | ✓ | | | | | | | | | | | | |
@@ -54,13 +54,23 @@ Domain ──► Shared only
 Footnotes:
 
 1. Ordering asks Finance for the commission rate to freeze (`CommissionRates::resolve(vendorId, categoryId)`), and that is all.
-2. Payments calls `Ordering\Contracts\OrderPayments` inside the payment-success transaction (context map §3). **Cycle check:** Ordering → Payments (create attempt, request refund) and Payments → Ordering (markPaid) would form a cycle. It is broken as follows:
-   - `OrderPayments` is an interface declared in **Payments\Contracts** and *implemented* by Ordering. This is dependency inversion: Payments owns the port, and Ordering provides the adapter.
-   - Payments therefore never imports Ordering, and the graph stays acyclic.
+2. **Payments → Ordering is not a dependency.** Ordering uses `Payments\Contracts` (create an attempt, request a refund) and implements the port `Payments\Contracts\OrderPayments`, which Payments declares (ADR-0010 §4, ports). In the payment-success transaction (context map §3), Payments calls that port; Ordering's implementation is bound in Ordering's service provider.
+   - Ordering → Payments is therefore the only edge between them, and the graph stays acyclic.
+   - Payments never imports any `App\Modules\Ordering` namespace.
 3. **Deliberately empty.** Finance must not call Ordering or Payments synchronously; Ordering → Finance (footnote 1) would otherwise create a cycle.
    - Statements are built from Finance's own ledger. Every ledger transaction carries its `reference_type` and `reference_id`, plus the order and refund references it needs for display, copied from the event payload.
    - Reconciliation and dashboards use the named read-model queries in §4.
 4. Engagement asks Ordering "did this customer receive this line?" for verified reviews.
+
+### Composition root and transitional legacy (ADR-0010 §2a, §2b)
+
+| # | Rule |
+|---|---|
+| C1 | No `App\Modules\*` or `App\Shared\*` class imports `App\Providers`, `App\Http` or `App\Models`. The only exception is Identity importing `App\Models\User` until its exit milestone (M3). |
+| C2 | `App\Models` contains only `User`, and `App\Http\Controllers` contains only `Controller`. The allowlist is closed; each exit removes its entry in the same change. |
+| C3 | `App\Modules` contains only the 13 modules in the matrix above. Each contains only `Domain`, `Application`, `Infrastructure`, `Http`, `Contracts` and `Filament`, and each directory exists only once its first class is written. |
+
+The composition root (`App\Providers`, kernel-level `App\Http`, `bootstrap/`, `routes/`) may import `App\Shared`, module `Contracts`, and module `Http`, `Filament` or `Infrastructure` classes only to register them.
 
 ## 3. Event subscriptions (asynchronous; no restriction on direction)
 
@@ -99,9 +109,20 @@ Adding to this list needs a PR that updates this table.
 | F3 | No money arithmetic in components beyond display; totals come from the server (ADR-0013, ADR-0018) |
 | F4 | No physical direction utilities (`ml-`, `pr-`, `left-`, `text-left`) in components; use logical equivalents (`ms-`, `pe-`, `start-`, `text-start`) |
 
-Rules F1–F4 are enforced with ESLint (`import/no-restricted-paths`, plus a custom Tailwind class lint) in Phase 3.
-
-ESLint is not installed yet (owner decision), so F1 and F4 are enforced now by Vitest checks that run in CI, and move to ESLint if and when ESLint is approved:
+ESLint is not installed (owner decision). F2 and F3 are deferred until M3 (§6). F1 and F4 are enforced by these Vitest checks, which run in CI, and move to ESLint only if ESLint is approved:
 
 - **F1:** `resources/js/rules/surface-boundaries.test.ts`. Storefront code is `resources/js/storefront/**` and `resources/js/pages/Storefront/**`; vendor code is `resources/js/vendor/**` and `resources/js/pages/Vendor/**`; everything else (`shared/`, `i18n/`, `design/`, `types/`, …) is shared and may import neither. It resolves `@/` and relative imports, static and dynamic.
 - **F4:** `resources/js/rules/logical-direction.test.ts`, which scans Vue, TypeScript, Blade and CSS for physical utilities and properties.
+
+## 6. Deferred rules
+
+These rules are normative but not yet enforced, because the code they constrain does not exist or the enforcement mechanism needs its own change. Each is enforced, with a deliberate-violation fixture, no later than its trigger. The architecture-test registry in `tests/Arch/` lists the same rules and triggers.
+
+| Rule | Why deferred | Trigger | Expected milestone |
+|---|---|---|---|
+| L3, method-call part (Eloquent writes and status setters in controllers) | Arch tests cannot see method calls; needs a PHPStan rule | First module with controllers and Eloquent models | M3 |
+| L4 (status assigned only by state machines) | Arch tests cannot see assignments; needs a PHPStan rule | First state machine (Vendor lifecycle) | M3 |
+| M3 (no relationship, join or raw query on another module's table) | Needs tables and the table-ownership map in `database-design.md` | Second module that owns tables | M3–M4 |
+| M6 (events published only by their owning module) | No events exist; ADR-0017 is Proposed | ADR-0017 accepted and the first integration event | Outbox milestone; M3 at the earliest (`VendorApproved`) |
+| F2 (pages import server-data types only from `types/generated.d.ts`) | ADR-0018 is Proposed; no generated types exist | First typed page contract | M3 |
+| F3 (no money arithmetic in components beyond display) | No server money is rendered yet | First page that renders server money | M3 |
