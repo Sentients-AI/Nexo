@@ -75,7 +75,7 @@ The table records which criterion separates each module. Capabilities that share
           │                                       │ events (VendorOrderPaid, Cancelled, Completed, ReturnReceived…)
           ▼                                       ▼
      ┌─────────┐   events (captured, refunded,  ┌─────────┐
-     │ Finance │◄─ disputed, fees) ─────────────│Payments │──► port: Payments.Contracts.OrderPayments::markPaid,
+     │ Finance │◄─ disputed, fees) ─────────────│Payments │──► port: Payments\Contracts\OrderPayments::markPaid,
      └─────────┘                                └─────────┘    implemented by Ordering (inside the payment-success
                                                                transaction, see note; no Payments → Ordering dependency)
      Search, Notifications, Engagement(rating aggregates) ◄── events from all of the above
