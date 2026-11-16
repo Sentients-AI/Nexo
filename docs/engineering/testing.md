@@ -62,9 +62,26 @@ $results = Concurrently::run(app(), AcquireDatabaseLock::class, workers: 2, argu
 ### Platform proofs — `tests/Platform/`
 
 Proofs about the test platform itself: the guard aborts before any schema
-operation, lock-connection isolation, and the CI user's privileges. They create
-only the probe databases listed in `Tests\Support\Database\ProbeDatabases`, so
-they run sequentially and skip under `--parallel`.
+operation, lock-connection isolation, the CI user's privileges, and the server
+baseline. They create only the probe databases listed in
+`Tests\Support\Database\ProbeDatabases`, plus one probe table
+(`platform_baseline_probe`, dropped after each test), so they run sequentially
+and skip under `--parallel`.
+
+`ServerBaselineTest` proves ADR-0009 §2 on both `mysql` and `mysql_locks`: the
+session reports `REPEATABLE-READ`, a `sql_mode` with `STRICT_TRANS_TABLES`,
+InnoDB, and `utf8mb4`/`utf8mb4_0900_ai_ci` for the connection and the database.
+It also proves the behaviour behind each setting: a snapshot read does not see a
+row the other connection committed, an over-long value is rejected (1406), and
+a table built by the schema builder is InnoDB with that collation. Controls show
+each check fails on a `READ COMMITTED`, non-strict, MyISAM or `unicode_ci`
+session. In CI it also requires MySQL 8.4.x; locally 8.0 is tolerated and that
+one test skips.
+
+Some proofs are optional locally but required in CI. When `CI=true` (set by
+GitHub Actions), `TestUserPrivilegesTest` fails instead of skipping if
+`NEXO_TEST_PRIVILEGES=1` is missing, so a dropped flag cannot turn the
+privilege proofs into a green run of skips.
 
 ## Naming
 
@@ -139,7 +156,8 @@ Laragon's `root` user is fine locally. A dedicated user is recommended, not
 enforced (M6-D-03). In CI the tests connect as `nexo_test`, whose only
 privileges are on `nexo\_testing%` (`.github/mysql/create-test-user.sql`);
 `tests/Platform/TestUserPrivilegesTest.php` proves what that user can and
-cannot do, and runs only with `NEXO_TEST_PRIVILEGES=1`.
+cannot do, and runs only with `NEXO_TEST_PRIVILEGES=1` (required in CI, see
+Platform proofs).
 
 To reproduce CI's MySQL 8.4 and test user locally with Docker:
 
