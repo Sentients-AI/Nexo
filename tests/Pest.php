@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ContinuousIntegration;
 use Tests\TestCase;
 
 /*
@@ -23,9 +24,15 @@ pest()->extend(TestCase::class)
 
 // Platform proofs manage their own, explicitly named probe databases and must
 // not run inside a test transaction (CREATE DATABASE commits implicitly).
+// They cannot run under --parallel. Locally they skip there; in CI that would
+// be a green run with no proofs, so they fail instead.
 pest()->extend(TestCase::class)
     ->beforeEach(function (): void {
         if (getenv('TEST_TOKEN') !== false || isset($_SERVER['TEST_TOKEN'])) {
+            if (ContinuousIntegration::detected()) {
+                $this->fail('Platform proofs cannot run under --parallel (TEST_TOKEN is set). CI must run them sequentially: php artisan test --testsuite=Platform,Concurrency.');
+            }
+
             $this->markTestSkipped('Platform proofs share named probe databases; run them without --parallel.');
         }
     })

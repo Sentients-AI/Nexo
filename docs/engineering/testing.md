@@ -78,10 +78,20 @@ each check fails on a `READ COMMITTED`, non-strict, MyISAM or `unicode_ci`
 session. In CI it also requires MySQL 8.4.x; locally 8.0 is tolerated and that
 one test skips.
 
-Some proofs are optional locally but required in CI. When `CI=true` (set by
-GitHub Actions), `TestUserPrivilegesTest` fails instead of skipping if
-`NEXO_TEST_PRIVILEGES=1` is missing, so a dropped flag cannot turn the
-privilege proofs into a green run of skips.
+Some proofs are optional locally but required in CI, so in CI they fail
+instead of skipping. A changed workflow then cannot turn them into a green run
+of skips:
+
+- `TestUserPrivilegesTest` fails unless `NEXO_TEST_PRIVILEGES` is exactly `1`.
+- Every Platform proof fails when `TEST_TOKEN` is set, which means it is
+  running under `--parallel`. Run them sequentially, as CI does:
+  `php artisan test --testsuite=Platform,Concurrency`.
+
+CI is detected by `Tests\Support\ContinuousIntegration`: `GITHUB_ACTIONS=true`,
+or `CI` set to anything other than empty, `0` or `false`. An unexpected value
+counts as CI, so it enforces the rules rather than relaxing them. Locally,
+with neither variable set, both cases still skip. `CiEnforcementTest` proves
+these rules by running the proofs in child processes with each environment.
 
 ## Naming
 
