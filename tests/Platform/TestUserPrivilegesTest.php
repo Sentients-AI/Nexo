@@ -4,20 +4,27 @@ declare(strict_types=1);
 
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\ContinuousIntegration;
 
 /*
  * M6-D-03: in CI the tests connect as `nexo_test`, privileged only on
  * `nexo\_testing%` (.github/mysql/create-test-user.sql). Proven by what the
  * user can and cannot do, not by reading SHOW GRANTS alone.
  *
- * Runs only with NEXO_TEST_PRIVILEGES=1: in CI, and in the local Docker
- * MySQL 8.4 check. Laragon runs as root, which M6-D-03 allows locally.
+ * Runs with NEXO_TEST_PRIVILEGES=1: in CI, and in the local Docker MySQL 8.4
+ * check. Laragon runs as root, which M6-D-03 allows locally, so locally the
+ * proofs skip without the flag. In CI (CI=true) they fail without it: a
+ * dropped flag must not turn the proofs into a green run of skips.
  */
 
 const PRIVILEGE_PROBE = 'nexo_testing_priv_probe';
 
 beforeEach(function (): void {
     if (getenv('NEXO_TEST_PRIVILEGES') !== '1') {
+        if (ContinuousIntegration::detected()) {
+            $this->fail('CI must prove the test user privileges (M6-D-03): connect as nexo_test and set NEXO_TEST_PRIVILEGES=1.');
+        }
+
         $this->markTestSkipped('Needs the dedicated nexo_test user (CI or the local Docker check); set NEXO_TEST_PRIVILEGES=1.');
     }
 
