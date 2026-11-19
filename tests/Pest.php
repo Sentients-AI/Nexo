@@ -2,6 +2,8 @@
 
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\Redis\RedisGate;
+use Tests\Support\Redis\RedisKeys;
 use Tests\TestCase;
 
 /*
@@ -36,3 +38,15 @@ pest()->extend(TestCase::class)
 pest()->extend(TestCase::class)
     ->use(DatabaseTruncation::class)
     ->in('Concurrency');
+
+// Redis contracts (ADR-0022): gated (CI-mandatory, skipped locally without
+// NEXO_TEST_REDIS=1) and verified live (R6) before the first command. Each
+// test deletes only the keys it recorded.
+pest()->extend(TestCase::class)
+    ->beforeEach(function (): void {
+        RedisGate::enter();
+    })
+    ->afterEach(function (): void {
+        RedisKeys::cleanUp();
+    })
+    ->in('Redis');

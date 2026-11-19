@@ -66,6 +66,44 @@ operation, lock-connection isolation, and the CI user's privileges. They create
 only the probe databases listed in `Tests\Support\Database\ProbeDatabases`, so
 they run sequentially and skip under `--parallel`.
 
+### Redis tests — `tests/Redis/`
+
+Redis contracts on a standalone, ACL-restricted Valkey 8.1 (ADR-0022). They
+run only with `NEXO_TEST_REDIS=1` and the phpredis extension. Locally, a
+missing condition skips each test with the reason; in CI it fails the run.
+Sequential, never `--parallel`.
+
+- **Identity and namespace.** The tests connect as `nexo_test`, with the
+  prefix `nexo_testing:` and no database set: Laravel would `SELECT` any
+  configured database, even 0, and the ACL denies `SELECT`. The test database
+  guard rejects anything else before a command is sent (R1 host, R2
+  URL/TLS/cluster, R3 username, R4 prefix, R5 database).
+- **Live check (R6).** Before the first test in a process, `RedisGate`
+  confirms that `ACL WHOAMI` is `nexo_test` and that the server refuses
+  `CONFIG GET`, `KEYS` and then `FLUSHDB`. If anything is allowed, every test
+  in that process fails and nothing else is sent.
+- **No flush.** `FLUSHDB`, `FLUSHALL`, `KEYS` and `SCAN` are denied, so
+  `Cache::flush()` on the Redis store cannot be used. Record each key you
+  create with `RedisKeys::track()`; it is deleted with `UNLINK` after the test.
+- **Command inventory.** `tests/Redis/command-inventory.php` lists every
+  command the test identity may run, with a reason. `.github/valkey/users.acl`
+  is rendered from it (`Tests\Support\Redis\UsersAcl::render()`), and
+  `tests/Unit/UsersAclTest.php` fails if they differ. A test that needs a new
+  command adds it there and re-renders the file.
+- **Fail-closed proofs.** `GuardFailsClosedTest` runs
+  `tests/Probes/RedisProbeTest.php` in child processes with a wrong host, URL,
+  username, prefix, database or password, and checks that each one fails with
+  its rule and writes nothing.
+
+Running them locally needs Docker and a PHP 8.5 with phpredis. There is none
+for Windows yet, so use a Linux container:
+
+```sh
+bash .github/valkey/start.sh        # loopback-only Valkey with the CI ACL
+NEXO_TEST_REDIS=1 REDIS_PASSWORD=nexo_test php artisan test --testsuite=Redis
+docker rm -f nexo-valkey
+```
+
 ## Naming
 
 Describe the behaviour, not the method under test.
@@ -195,4 +233,5 @@ composer test                        # clears config cache, then runs the suite
 # What CI runs:
 php artisan test --parallel --processes=4 --testsuite=Unit,Feature
 php artisan test --testsuite=Platform,Concurrency
+php artisan test --testsuite=Redis   # Valkey + NEXO_TEST_REDIS=1 (ADR-0022)
 ```

@@ -40,7 +40,7 @@ MSYS_NO_PATHCONV=1 docker run -d --name "$NAME" \
 
 for _ in $(seq 1 30); do
     if [ "$("$HERE/admin.sh" PING 2>/dev/null)" = "PONG" ]; then
-        "$HERE/admin.sh" INFO server | grep -E '^(valkey_version|redis_mode|os):'
+        "$HERE/admin.sh" INFO server | grep -E '^(valkey_version|server_mode|redis_mode|os):'
         exit 0
     fi
     sleep 1
