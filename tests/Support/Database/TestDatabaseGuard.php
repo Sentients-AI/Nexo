@@ -6,7 +6,7 @@ namespace Tests\Support\Database;
 
 /**
  * The single, authoritative implementation of the test database guard
- * (ADR-0009 §3a). It is pure: the same input always gives the same
+ * (ADR-0009 §3a), with its Redis rules R1-R5 (ADR-0022 §5). It is pure: the same input always gives the same
  * violations, and it performs no I/O.
  *
  * It is enforced in tests/bootstrap.php, in Tests\CreatesApplication (every
@@ -23,12 +23,21 @@ final class TestDatabaseGuard
     /** @var list<string> */
     public const array ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '::1'];
 
+    public const string REDIS_USERNAME = 'nexo_test';
+
+    /** `D`: `$` must not match before a trailing newline. */
+    public const string REDIS_PREFIX_PATTERN = '/^nexo_testing:(test_[1-9][0-9]*:)?$/D';
+
     /**
-     * @return list<string> Each violation starts with its rule id (G1-G5).
+     * @return list<string> Each violation starts with its rule id (G1-G5, R1-R5).
      */
     public static function violations(GuardInput $input): array
     {
         $violations = [];
+
+        if ($input->redis !== null) {
+            array_push($violations, ...self::redisViolations($input->redis, $input->redisClustersConfigured));
+        }
 
         if ($input->configCached) {
             $violations[] = 'G1 configuration is cached ('.($input->configCachePath ?? 'bootstrap/cache/config.php')
@@ -166,6 +175,65 @@ final class TestDatabaseGuard
 
         return ['G5 '.$label.' database '.self::show($database).' under --parallel must be '
             .implode(' or ', array_map(self::show(...), $allowed))];
+    }
+
+    /**
+     * ADR-0022 §5, R1-R5. R6 is the live check (Tests\Support\Redis\RedisGate).
+     *
+     * @param  array<string, array<string, mixed>>  $connections
+     * @return list<string>
+     */
+    private static function redisViolations(array $connections, bool $clustersConfigured): array
+    {
+        $violations = [];
+
+        if ($clustersConfigured) {
+            $violations[] = 'R2 redis clusters are configured; the tests use one standalone server';
+        }
+
+        foreach ($connections as $name => $config) {
+            $label = 'redis connection ['.$name.']';
+            $host = $config['host'] ?? null;
+
+            if (! is_string($host) || ! in_array($host, self::ALLOWED_HOSTS, true)) {
+                $violations[] = 'R1 '.$label.' host '.self::show($host)
+                    .' is not allowlisted ('.implode(', ', self::ALLOWED_HOSTS).')';
+            }
+
+            // No URL (it would override host and credentials), no TLS scheme or
+            // stream context, no cluster.
+            foreach (['url', 'scheme', 'context', 'cluster_name'] as $key) {
+                $value = $config[$key] ?? null;
+
+                if ($value !== null && $value !== '' && $value !== []) {
+                    $violations[] = 'R2 '.$label.' '.$key.' must be empty, got '.self::show($value);
+                }
+            }
+
+            $username = $config['username'] ?? null;
+
+            if ($username !== self::REDIS_USERNAME) {
+                $violations[] = 'R3 '.$label.' username '.self::show($username)
+                    .", expected '".self::REDIS_USERNAME."'";
+            }
+
+            $prefix = $config['prefix'] ?? null;
+
+            if (! is_string($prefix) || preg_match(self::REDIS_PREFIX_PATTERN, $prefix) !== 1) {
+                $violations[] = 'R4 '.$label.' prefix '.self::show($prefix)
+                    .' does not match '.self::REDIS_PREFIX_PATTERN;
+            }
+
+            // Laravel sends SELECT whenever a database is set, even 0, and the
+            // ACL denies SELECT. Unset keeps every connection on database 0.
+            $database = $config['database'] ?? null;
+
+            if ($database !== null) {
+                $violations[] = 'R5 '.$label.' database must be unset (database 0, no SELECT), got '.self::show($database);
+            }
+        }
+
+        return $violations;
     }
 
     private static function show(mixed $value): string
