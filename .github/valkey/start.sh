@@ -25,7 +25,8 @@ cp "$HERE/valkey.conf" "$HERE/users.acl" "$RUNTIME/etc/"
 
 ADMIN_PASSWORD="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
 ADMIN_SHA256="$(printf '%s' "$ADMIN_PASSWORD" | sha256sum | cut -d' ' -f1)"
-printf 'user nexo_ci_admin on #%s resetkeys ~* resetchannels -@all +ping +info +get +set +exists +acl|whoami +acl|getuser +config|resetstat\n' \
+# Keep in step with Tests\Support\Redis\ValkeyPolicy::ADMIN_COMMANDS.
+printf 'user nexo_ci_admin on #%s resetkeys ~* resetchannels -@all +acl|list +acl|whoami +config|resetstat +get +info +ping +set\n' \
     "$ADMIN_SHA256" >> "$RUNTIME/etc/users.acl"
 
 # Hashes only, so readable: the container's valkey user must read them.

@@ -93,3 +93,23 @@ it('verifies the sentinel after every test stage, even when one failed', functio
         }
     }
 });
+
+it('checks the live ACL and command statistics after every test stage', function (): void {
+    $steps = ciTestJobSteps();
+    $names = array_keys($steps);
+    $name = 'Verify the live Valkey ACL and command statistics';
+    $policy = array_search($name, $names, true);
+
+    expect($policy)->not->toBeFalse()
+        ->and($steps[$name])->toContain("if: \${{ !cancelled() && steps.sentinel.outcome == 'success' }}")
+        ->and($steps[$name])->toContain('.github/valkey/admin.sh ACL LIST > "$RUNNER_TEMP/valkey-acl.txt"')
+        ->and($steps[$name])->toContain('.github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/valkey-commandstats.txt"')
+        ->and($steps[$name])->toContain('php tests/Redis/bin/verify-valkey-policy.php "$RUNNER_TEMP/valkey-acl.txt" "$RUNNER_TEMP/valkey-commandstats.txt"')
+        ->and($steps[$name])->not->toContain('continue-on-error');
+
+    foreach ($steps as $step => $text) {
+        if (str_contains($text, 'php artisan test')) {
+            expect(array_search($step, $names, true))->toBeLessThan($policy, "Step [{$step}] runs after the policy check");
+        }
+    }
+});

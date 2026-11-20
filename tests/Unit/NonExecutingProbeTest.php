@@ -106,6 +106,21 @@ it('counts an error other than NOPERM as not refused', function (): void {
     expect($redis->run())->toBe(['FLUSHDB was not refused by the ACL: ERR unknown command']);
 });
 
+it('counts a malformed reply to a queued command as permitted, never as refused', function (mixed $reply): void {
+    $redis = new ScriptedRedis(static function (array $command) use ($reply): mixed {
+        return $command === ['FLUSHDB'] ? $reply : refusingEverything($command);
+    });
+
+    expect($redis->run())->toHaveCount(1)
+        ->and($redis->run()[0])->toStartWith('FLUSHDB is permitted')
+        ->and($redis->sent)->not->toContain('EXEC');
+})->with([
+    'a garbage string' => 'garbage',
+    'an array' => [['QUEUED', 'extra']],
+    'null' => null,
+    'an integer' => 0,
+]);
+
 it('closes the connection when the link breaks mid-probe', function (): void {
     $redis = new ScriptedRedis(static function (array $command): mixed {
         if ($command === ['MULTI']) {

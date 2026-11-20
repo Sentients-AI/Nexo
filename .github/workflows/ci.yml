@@ -149,6 +149,18 @@ jobs:
         if: ${{ !cancelled() && steps.sentinel.outcome == 'success' }}
         run: test "$(.github/valkey/admin.sh GET nexo_ci:sentinel)" = "$(cat "$RUNNER_TEMP/valkey-sentinel")"
 
+      # ADR-0022 §8: the live ACL must equal the rendered policy, and over the
+      # whole run no prohibited command executed, nothing ran outside the
+      # command inventory, and no inventory entry went unused. Collected as
+      # the admin user; the PHP check sees only the output, never a
+      # credential, and prints no ACL line.
+      - name: Verify the live Valkey ACL and command statistics
+        if: ${{ !cancelled() && steps.sentinel.outcome == 'success' }}
+        run: |
+          .github/valkey/admin.sh ACL LIST > "$RUNNER_TEMP/valkey-acl.txt"
+          .github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/valkey-commandstats.txt"
+          php tests/Redis/bin/verify-valkey-policy.php "$RUNNER_TEMP/valkey-acl.txt" "$RUNNER_TEMP/valkey-commandstats.txt"
+
   frontend:
     name: Node 24 / Vue 3
     runs-on: ubuntu-latest

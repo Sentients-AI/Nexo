@@ -102,7 +102,28 @@ Sequential, never `--parallel`.
   command the test identity may run, with a reason. `.github/valkey/users.acl`
   is rendered from it (`Tests\Support\Redis\UsersAcl::render()`), and
   `tests/Unit/UsersAclTest.php` fails if they differ. A test that needs a new
-  command adds it there and re-renders the file.
+  command adds it there and re-renders the file. Commands Laravel runs inside
+  Lua are listed too: the ACL checks each one. `EXEC`, `COPY` and the database
+  switches are prohibited, not just absent.
+- **Contracts.** `CacheContractTest`, `LockContractTest`,
+  `RateLimiterContractTest` and `QueueContractTest` prove Laravel's Redis
+  behaviour. Cross-process cases run in harness workers
+  (`Tests\Concurrency\Scenarios\RedisContract`), each its own process with its
+  own connection, and the queue worker processes only its test's queue.
+  Expiry is asserted on the server's TTLs and waited for with bounded polling
+  (`Eventually`), never with a fixed sleep. `RateLimiter::hit()` can lose
+  counts in the first hits of a new window under concurrency (Laravel's
+  `add` + `put` reset); use `Redis::throttle()` where that matters.
+- **Lua.** `LuaIsolationTest` proves a script cannot reach a key outside the
+  namespace (built in the script, passed as `ARGV`, which phpredis does not
+  prefix, or declared) or run a prohibited command.
+- **Live policy check (CI).** After every test stage, CI reads `ACL LIST` and
+  `INFO commandstats` as the admin user, and
+  `tests/Redis/bin/verify-valkey-policy.php` fails unless the live ACL equals
+  the rendered policy, no prohibited command ever executed, nothing ran
+  outside the inventory, and every inventory entry was used. Statistics show
+  which commands ran, not on which keys; namespace isolation rests on the ACL
+  and the isolation tests.
 - **Fail-closed proofs.** `GuardFailsClosedTest` runs
   `tests/Probes/RedisProbeTest.php` in child processes with a wrong host, URL,
   username, prefix, database or password, and checks that each one fails with
