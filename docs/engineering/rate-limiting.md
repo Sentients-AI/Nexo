@@ -40,8 +40,8 @@ limit of 7 admit exactly 7.
   and application code.
 - `ThrottleRequestsWithRedis`, the Redis-backed `throttle:` middleware.
   Laravel uses it in place of `ThrottleRequests` when
-  `bootstrap/app.php` calls `$middleware->throttleWithRedis()`. It needs the
-  Redis cache connection.
+  `bootstrap/app.php` calls `$middleware->throttleWithRedis()`. It uses the
+  default Redis connection (`database.redis.default`), not the cache store.
 
 Use it where the limit is a guarantee: payment attempts, outbound API quotas,
 one-at-a-time operations.

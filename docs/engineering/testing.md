@@ -89,10 +89,18 @@ Sequential, never `--parallel`.
 - **Live check (R6), Redis suite.** Before the first test in a process,
   `RedisGate` asks whether `CONFIG GET`, `KEYS`, `FLUSHDB` and `FLUSHALL` are
   permitted, without running them: they are queued inside `MULTI` and the
-  transaction is always discarded (`NonExecutingProbe`). By then each
-  connection has sent only `AUTH`, `ACL WHOAMI`, `MULTI`, the queued commands
-  and `DISCARD`. If anything is permitted, every test in that process fails
-  and opens no further connection. The probe never sends `EXEC`.
+  transaction is always discarded (`NonExecutingProbe`). The probe uses a
+  connection of its own, switches phpredis's transparent reconnect off
+  (`OPT_MAX_RETRIES` 0, checked before `MULTI`; phpredis defaults to 10 and
+  Laravel configures 3), stops and closes the connection at the first
+  unexpected error, and closes it afterwards in every case. Without that, a
+  connection dropped after `MULTI` would reconnect and run the next probed
+  command for real; `ProbeReconnectTest` reproduces exactly that on a
+  disposable Valkey (`.github/valkey/start-disposable.sh`, port 6391, never the
+  test Valkey) and proves the probe now runs nothing. Each probe connection
+  sends only `AUTH`, `ACL WHOAMI`, `MULTI`, the queued commands and `DISCARD`.
+  If anything is permitted, every test in that process fails and opens no
+  further connection. The probe never sends `EXEC`.
 - **Transactions.** `EXEC` is granted, because `Cache::putMany()` needs it.
   The ACL checks each command as it is queued, so a transaction that queues a
   refused command or key aborts as a whole and none of its writes run
@@ -101,7 +109,9 @@ Sequential, never `--parallel`.
   checks, so a parallel worker skips it locally and fails it in CI. Other
   suites may run in parallel: each worker gets its own Redis prefix,
   `nexo_testing:test_<N>:`, beside its own MySQL database, and the guard
-  rejects any other worker's prefix.
+  rejects any other worker's prefix. Harness workers (`Concurrently`) are
+  handed their parent's Redis and cache prefixes, as they are its database
+  (`HarnessPrefixTest`).
 - **No flush.** `FLUSHDB`, `FLUSHALL`, `KEYS` and `SCAN` are denied, so
   `Cache::flush()` on the Redis store cannot be used. Record each key you
   create with `RedisKeys::track()`; it is deleted with `UNLINK` after the test.
@@ -146,9 +156,10 @@ Running them locally needs Docker and a PHP 8.5 with phpredis. There is none
 for Windows yet, so use a Linux container:
 
 ```sh
-bash .github/valkey/start.sh        # loopback-only Valkey with the CI ACL
-NEXO_TEST_REDIS=1 php artisan test --testsuite=Redis
-docker rm -f nexo-valkey
+bash .github/valkey/start.sh             # loopback-only Valkey with the CI ACL
+bash .github/valkey/start-disposable.sh  # throwaway server for the reconnect test
+NEXO_TEST_REDIS=1 NEXO_TEST_DISPOSABLE_REDIS_PORT=6391 php artisan test --testsuite=Redis
+docker rm -f nexo-valkey nexo-valkey-disposable
 ```
 
 ### Package policy
