@@ -25,6 +25,8 @@ final class TestDatabaseGuard
 
     public const string REDIS_USERNAME = 'nexo_test';
 
+    public const string REDIS_BASE_PREFIX = 'nexo_testing:';
+
     /** `D`: `$` must not match before a trailing newline. */
     public const string REDIS_PREFIX_PATTERN = '/^nexo_testing:(test_[1-9][0-9]*:)?$/D';
 
@@ -37,6 +39,10 @@ final class TestDatabaseGuard
 
         if ($input->redis !== null) {
             array_push($violations, ...self::redisViolations($input->redis, $input->redisClustersConfigured));
+
+            if ($input->parallel) {
+                array_push($violations, ...self::redisParallelViolations($input->redis, $input->parallelToken));
+            }
         }
 
         if ($input->configCached) {
@@ -240,6 +246,37 @@ final class TestDatabaseGuard
 
             if ($database !== null) {
                 $violations[] = 'R5 '.$label.' database must be unset (database 0, no SELECT), got '.self::show($database);
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Under --parallel, a worker may use only the base namespace (before its
+     * per-test switch) or its own, nexo_testing:test_<token>:, never another
+     * worker's. The runner's parent process, with no token, may use only the
+     * base one.
+     *
+     * @param  array<string, array<string, mixed>>  $connections
+     * @return list<string>
+     */
+    private static function redisParallelViolations(array $connections, ?string $token): array
+    {
+        $allowed = [self::REDIS_BASE_PREFIX];
+
+        if ($token !== null) {
+            $allowed[] = self::REDIS_BASE_PREFIX.'test_'.$token.':';
+        }
+
+        $violations = [];
+
+        foreach ($connections as $name => $config) {
+            $prefix = $config['prefix'] ?? null;
+
+            if (! in_array($prefix, $allowed, true)) {
+                $violations[] = 'R4 redis connection ['.$name.'] prefix '.self::show($prefix).' under --parallel must be '
+                    .implode(' or ', array_map(self::show(...), $allowed));
             }
         }
 

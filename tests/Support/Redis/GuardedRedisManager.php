@@ -41,6 +41,36 @@ final class GuardedRedisManager extends RedisManager
     }
 
     /**
+     * Give a parallel worker its own namespace, nexo_testing:test_<token>:,
+     * inside the ACL's nexo_testing:* (ADR-0022 §4), so workers sharing one
+     * Valkey never see each other's keys. The manager is rebuilt, because
+     * RedisManager copies its configuration when it is constructed; any
+     * connection opened under the old prefix is closed first.
+     */
+    public static function pointAtWorker(Application $app, string $token): void
+    {
+        $manager = $app->make('redis');
+
+        // connections() is null until a connection is opened, although its
+        // docblock says array.
+        /** @var array<string, mixed>|null $open */
+        $open = $manager->connections();
+
+        foreach (array_keys($open ?? []) as $name) {
+            $manager->purge((string) $name);
+        }
+
+        $app->make('config')->set('database.redis.options.prefix', TestDatabaseGuard::REDIS_BASE_PREFIX.'test_'.$token.':');
+
+        self::install($app);
+
+        // A Redis cache store resolved earlier would keep the old manager.
+        if ($app->resolved('cache')) {
+            $app->make('cache')->forgetDriver('redis');
+        }
+    }
+
+    /**
      * @param  string|null  $name
      * @return Connection
      */

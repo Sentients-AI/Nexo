@@ -34,7 +34,7 @@ function safeRedisConnection(array $overrides = []): array
  * @param  array<string, array<string, mixed>>  $redis
  * @return list<string> The rule ids of the violations.
  */
-function redisRuleIds(array $redis, bool $clusters = false): array
+function redisRuleIds(array $redis, bool $clusters = false, bool $parallel = false, ?string $token = null): array
 {
     $input = new GuardInput(
         configCached: false,
@@ -44,6 +44,8 @@ function redisRuleIds(array $redis, bool $clusters = false): array
         connections: ['mysql' => [
             'driver' => 'mysql', 'url' => '', 'host' => '127.0.0.1', 'database' => 'nexo_testing', 'unix_socket' => '',
         ]],
+        parallel: $parallel,
+        parallelToken: $token,
         redis: $redis,
         redisClustersConfigured: $clusters,
     );
@@ -146,6 +148,18 @@ it('R4 requires the nexo_testing: namespace', function (mixed $prefix): void {
 it('R4 accepts a parallel worker namespace', function (): void {
     expect(redisRuleIds(['default' => safeRedisConnection(['prefix' => 'nexo_testing:test_3:'])]))->toBe([]);
 });
+
+it('R4 under --parallel accepts only the base namespace or this worker\'s own', function (string $prefix, ?string $token, bool $accepted): void {
+    expect(redisRuleIds(['default' => safeRedisConnection(['prefix' => $prefix])], parallel: true, token: $token))
+        ->toBe($accepted ? [] : ['R4']);
+})->with([
+    'worker 2, its own' => ['nexo_testing:test_2:', '2', true],
+    'worker 2, the base before its switch' => ['nexo_testing:', '2', true],
+    'worker 2, worker 3\'s' => ['nexo_testing:test_3:', '2', false],
+    'worker 2, worker 22\'s' => ['nexo_testing:test_22:', '2', false],
+    'the runner\'s parent, the base' => ['nexo_testing:', null, true],
+    'the runner\'s parent, a worker\'s' => ['nexo_testing:test_1:', null, false],
+]);
 
 it('R5 requires the database to be unset, because Laravel would SELECT it', function (mixed $database): void {
     expect(redisRuleIds(['default' => safeRedisConnection(['database' => $database])]))->toBe(['R5']);
