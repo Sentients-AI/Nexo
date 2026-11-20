@@ -1,7 +1,7 @@
 # ADR-0022: Prove the Redis contracts on a standalone, ACL-restricted Valkey in CI
 
 - **Number:** 0022
-- **Status:** Accepted, by owner decision (2026-11-17): Valkey 8.1; number 0022.
+- **Status:** Accepted, by owner decision (2026-11-17): Valkey 8.1; number 0022. Implementation interpretations accepted by the owner, not changes to the decision: (1, 2026-11-17) §2's Debian image is the official, digest-pinned `valkey/valkey:8.1.11-trixie`, because no 8.1 `bookworm` image exists after 8.1.3; (2, 2026-11-19) §4–5's database 0 is met by leaving the Redis database unset in tests, because Laravel sends `SELECT` for any configured database, even 0, and `SELECT` stays denied.
 - **Date:** 2026-11-17
 - **Decision owner:** Project owner
 - **Supersedes / relates to:** completes the Redis test rules deferred by ADR-0009 (status line, §5); relates to ADR-0010 (package adoption deferred), ADR-0021

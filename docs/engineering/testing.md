@@ -73,15 +73,28 @@ run only with `NEXO_TEST_REDIS=1` and the phpredis extension. Locally, a
 missing condition skips each test with the reason; in CI it fails the run.
 Sequential, never `--parallel`.
 
-- **Identity and namespace.** The tests connect as `nexo_test`, with the
-  prefix `nexo_testing:` and no database set: Laravel would `SELECT` any
-  configured database, even 0, and the ACL denies `SELECT`. The test database
-  guard rejects anything else before a command is sent (R1 host, R2
-  URL/TLS/cluster, R3 username, R4 prefix, R5 database).
-- **Live check (R6).** Before the first test in a process, `RedisGate`
-  confirms that `ACL WHOAMI` is `nexo_test` and that the server refuses
-  `CONFIG GET`, `KEYS` and then `FLUSHDB`. If anything is allowed, every test
-  in that process fails and nothing else is sent.
+- **Identity and namespace.** The tests connect as `nexo_test`, with its
+  disposable CI password, the prefix `nexo_testing:` and no database set:
+  Laravel would `SELECT` any configured database, even 0, and the ACL denies
+  `SELECT`. The test database guard rejects anything else before a connection
+  is opened (R1 host, R2 URL/TLS/cluster, R3 username and a non-empty
+  password, R4 prefix, R5 database). The password matters: with none, Laravel
+  skips `AUTH` and the connection runs as the server's `default` user,
+  whatever username is configured.
+- **Identity at connection (R6), in every suite.** Every test application
+  resolves Redis through `GuardedRedisManager`. Each connection, once `AUTH`
+  has been sent, runs `ACL WHOAMI` and is refused unless the server answers
+  `nexo_test`. This covers Unit and Feature tests that use Redis without
+  `RedisGate`.
+- **Live check (R6), Redis suite.** Before the first test in a process,
+  `RedisGate` asks whether `CONFIG GET`, `KEYS`, `FLUSHDB` and `FLUSHALL` are
+  permitted, without running them: they are queued inside `MULTI` and the
+  transaction is always discarded (`NonExecutingProbe`). By then each
+  connection has sent only `AUTH`, `ACL WHOAMI`, `MULTI`, the queued commands
+  and `DISCARD`. If anything is permitted, every test in that process fails
+  and opens no further connection. `EXEC` is denied to the test identity.
+- **Never in parallel.** The suite uses one fixed namespace, so a parallel
+  worker skips it locally and fails it in CI.
 - **No flush.** `FLUSHDB`, `FLUSHALL`, `KEYS` and `SCAN` are denied, so
   `Cache::flush()` on the Redis store cannot be used. Record each key you
   create with `RedisKeys::track()`; it is deleted with `UNLINK` after the test.
@@ -93,14 +106,20 @@ Sequential, never `--parallel`.
 - **Fail-closed proofs.** `GuardFailsClosedTest` runs
   `tests/Probes/RedisProbeTest.php` in child processes with a wrong host, URL,
   username, prefix, database or password, and checks that each one fails with
-  its rule and writes nothing.
+  its rule and writes nothing. `UngatedResolutionTest` does the same for an
+  ordinary test outside `tests/Redis`.
+- **Sentinel.** CI seeds `nexo_ci:sentinel`, outside the test namespace, as
+  the admin user right after Valkey starts, and verifies it after every test
+  stage. It is a limited integrity check: it shows that this one key was not
+  changed or flushed, not that no other key was touched. The ACL is the
+  control. The admin password exists only inside the Valkey container.
 
 Running them locally needs Docker and a PHP 8.5 with phpredis. There is none
 for Windows yet, so use a Linux container:
 
 ```sh
 bash .github/valkey/start.sh        # loopback-only Valkey with the CI ACL
-NEXO_TEST_REDIS=1 REDIS_PASSWORD=nexo_test php artisan test --testsuite=Redis
+NEXO_TEST_REDIS=1 php artisan test --testsuite=Redis
 docker rm -f nexo-valkey
 ```
 
