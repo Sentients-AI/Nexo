@@ -92,9 +92,16 @@ Sequential, never `--parallel`.
   transaction is always discarded (`NonExecutingProbe`). By then each
   connection has sent only `AUTH`, `ACL WHOAMI`, `MULTI`, the queued commands
   and `DISCARD`. If anything is permitted, every test in that process fails
-  and opens no further connection. `EXEC` is denied to the test identity.
-- **Never in parallel.** The suite uses one fixed namespace, so a parallel
-  worker skips it locally and fails it in CI.
+  and opens no further connection. The probe never sends `EXEC`.
+- **Transactions.** `EXEC` is granted, because `Cache::putMany()` needs it.
+  The ACL checks each command as it is queued, so a transaction that queues a
+  refused command or key aborts as a whole and none of its writes run
+  (`TransactionContractTest`).
+- **Never in parallel.** The suite uses fixed marker keys and server-wide
+  checks, so a parallel worker skips it locally and fails it in CI. Other
+  suites may run in parallel: each worker gets its own Redis prefix,
+  `nexo_testing:test_<N>:`, beside its own MySQL database, and the guard
+  rejects any other worker's prefix.
 - **No flush.** `FLUSHDB`, `FLUSHALL`, `KEYS` and `SCAN` are denied, so
   `Cache::flush()` on the Redis store cannot be used. Record each key you
   create with `RedisKeys::track()`; it is deleted with `UNLINK` after the test.
@@ -103,7 +110,7 @@ Sequential, never `--parallel`.
   is rendered from it (`Tests\Support\Redis\UsersAcl::render()`), and
   `tests/Unit/UsersAclTest.php` fails if they differ. A test that needs a new
   command adds it there and re-renders the file. Commands Laravel runs inside
-  Lua are listed too: the ACL checks each one. `EXEC`, `COPY` and the database
+  Lua are listed too: the ACL checks each one. `COPY` and the database
   switches are prohibited, not just absent.
 - **Contracts.** `CacheContractTest`, `LockContractTest`,
   `RateLimiterContractTest` and `QueueContractTest` prove Laravel's Redis
@@ -111,9 +118,9 @@ Sequential, never `--parallel`.
   (`Tests\Concurrency\Scenarios\RedisContract`), each its own process with its
   own connection, and the queue worker processes only its test's queue.
   Expiry is asserted on the server's TTLs and waited for with bounded polling
-  (`Eventually`), never with a fixed sleep. `RateLimiter::hit()` can lose
-  counts in the first hits of a new window under concurrency (Laravel's
-  `add` + `put` reset); use `Redis::throttle()` where that matters.
+  (`Eventually`), never with a fixed sleep. Laravel's `RateLimiter` is not a
+  strict limiter under concurrency; which limiter to use is explained in
+  [Rate limiting](rate-limiting.md).
 - **Lua.** `LuaIsolationTest` proves a script cannot reach a key outside the
   namespace (built in the script, passed as `ARGV`, which phpredis does not
   prefix, or declared) or run a prohibited command.
@@ -159,6 +166,12 @@ dependencies count: every installed package has its own record there. Names
 match exactly, ignoring case; a package that only mentions one of these in
 its `require-dev` or `suggest` (as `laravel/framework` does for predis) is
 not installing it. A missing or malformed lockfile fails the check.
+
+An installed package that `replace`s or `provide`s one of these also fails:
+Composer would treat it as a stand-in for the prohibited package. This is a
+conservative substitution rule. It rejects the declaration, not proven
+identical code, and it cannot detect a package that bundles the same code
+without declaring anything.
 
 CI runs it before `composer install`, and `tests/Unit/PackagePolicyTest.php`
 also runs it on the repository's lockfile. To run it yourself:
