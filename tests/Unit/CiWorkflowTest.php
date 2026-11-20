@@ -94,6 +94,25 @@ it('verifies the sentinel after every test stage, even when one failed', functio
     }
 });
 
+it('enforces the package policy before dependencies are installed and before any test', function (): void {
+    $steps = ciTestJobSteps();
+    $names = array_keys($steps);
+    $name = 'Check the package policy';
+    $policy = array_search($name, $names, true);
+
+    expect($policy)->not->toBeFalse()
+        ->and($steps[$name])->toContain('run: php tests/bin/check-package-policy.php composer.lock')
+        ->and($steps[$name])->not->toContain('if:')
+        ->and($steps[$name])->not->toContain('continue-on-error')
+        ->and($policy)->toBeLessThan(array_search('Install dependencies', $names, true));
+
+    foreach ($steps as $step => $text) {
+        if (str_contains($text, 'php artisan test')) {
+            expect($policy)->toBeLessThan(array_search($step, $names, true), "Step [{$step}] runs before the package policy");
+        }
+    }
+});
+
 it('checks the live ACL and command statistics after every test stage', function (): void {
     $steps = ciTestJobSteps();
     $names = array_keys($steps);

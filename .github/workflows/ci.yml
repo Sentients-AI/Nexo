@@ -104,6 +104,13 @@ jobs:
       - name: Validate Composer
         run: composer validate --strict
 
+      # ADR-0022 §10: composer.lock must not install predis/predis,
+      # adilazhari/laravel-trace or adilazhari/laravel-idempotency. Needs no
+      # vendor directory, so it runs before anything is installed.
+      # tests/Unit/CiWorkflowTest.php keeps this step.
+      - name: Check the package policy
+        run: php tests/bin/check-package-policy.php composer.lock
+
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 

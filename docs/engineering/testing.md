@@ -144,6 +144,33 @@ NEXO_TEST_REDIS=1 php artisan test --testsuite=Redis
 docker rm -f nexo-valkey
 ```
 
+### Package policy
+
+`composer.lock` must not install these packages (ADR-0022 §10):
+
+| Package | Why it is not adopted |
+|---|---|
+| `predis/predis` | The Redis client is phpredis (ADR-0022 §3). Switching clients is a new decision, not a dependency change. |
+| `adilazhari/laravel-trace` | First-party package adoption is deferred (ADR-0010 was accepted without it; ADR-0022 §10). |
+| `adilazhari/laravel-idempotency` | As above. |
+
+`Tests\Support\Composer\PackagePolicy` reads the lockfile, so transitive
+dependencies count: every installed package has its own record there. Names
+match exactly, ignoring case; a package that only mentions one of these in
+its `require-dev` or `suggest` (as `laravel/framework` does for predis) is
+not installing it. A missing or malformed lockfile fails the check.
+
+CI runs it before `composer install`, and `tests/Unit/PackagePolicyTest.php`
+also runs it on the repository's lockfile. To run it yourself:
+
+```sh
+php tests/bin/check-package-policy.php        # or pass a path to another composer.lock
+```
+
+Adding a package to the list, or removing one, needs an owner decision
+recorded in an ADR (ADR-0006). Adopting one of these packages is that
+decision, not a pull request that edits `PackagePolicy::PROHIBITED`.
+
 ## Naming
 
 Describe the behaviour, not the method under test.
