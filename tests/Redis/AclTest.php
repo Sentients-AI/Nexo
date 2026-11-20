@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
+use Tests\Support\Redis\NonExecutingProbe;
 use Tests\Support\Redis\RedisGate;
+use Tests\Support\Redis\RedisKeys;
 
 /*
  * ADR-0022 §4, §6: the server refuses every prohibited command to the test
@@ -38,6 +40,34 @@ it('authenticates every configured connection as nexo_test', function (): void {
     foreach (RedisGate::connectionNames() as $name) {
         expect(Redis::connection($name)->client()->rawCommand('ACL', 'WHOAMI'))->toBe('nexo_test');
     }
+});
+
+it('R6 probe: the server refuses every probed command inside a discarded transaction', function (): void {
+    $client = Redis::connection()->client();
+    $abandoned = false;
+
+    $violations = NonExecutingProbe::violations(
+        NonExecutingProbe::sender($client),
+        static function () use (&$abandoned): void {
+            $abandoned = true;
+        },
+    );
+
+    expect($violations)->toBe([])
+        ->and($abandoned)->toBeFalse()
+        // The transaction is gone: a normal command runs immediately again.
+        ->and(Redis::connection()->set(RedisKeys::track('acl:after-probe'), '1'))->toBeTrue();
+});
+
+it('refuses EXEC, so nothing queued can ever run as the test identity', function (): void {
+    $key = RedisKeys::track('acl:queued');
+    $client = Redis::connection()->client();
+
+    expect($client->rawCommand('MULTI'))->toBeTrue()
+        ->and($client->rawCommand('SET', 'nexo_testing:acl:queued', 'ran'))->toBeTrue()
+        ->and(redisRefusal(['EXEC']))
+        ->toBe("EXECABORT Transaction discarded because of: NOPERM User nexo_test has no permissions to run the 'exec' command")
+        ->and(Redis::connection()->get($key))->toBeNull();
 });
 
 it('refuses a prohibited command', function (string $rule, array $command): void {

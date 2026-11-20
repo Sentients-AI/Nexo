@@ -39,9 +39,10 @@ pest()->extend(TestCase::class)
     ->use(DatabaseTruncation::class)
     ->in('Concurrency');
 
-// Redis contracts (ADR-0022): gated (CI-mandatory, skipped locally without
-// NEXO_TEST_REDIS=1) and verified live (R6) before the first command. Each
-// test deletes only the keys it recorded.
+// Redis contracts (ADR-0022), through RedisGate: never under --parallel,
+// CI-mandatory (skipped locally without NEXO_TEST_REDIS=1 or phpredis; a
+// failure in CI), and verified live (R6) before the first test. Each test
+// deletes only the keys it recorded.
 pest()->extend(TestCase::class)
     ->beforeEach(function (): void {
         RedisGate::enter();

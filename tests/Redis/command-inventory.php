@@ -15,8 +15,10 @@ declare(strict_types=1);
  */
 
 return [
-    'acl|whoami' => 'R6: the live guard confirms the authenticated identity',
+    'acl|whoami' => 'R6: every connection confirms its authenticated identity when resolved',
+    'discard' => 'R6: the non-executing probe always discards its transaction',
     'get' => 'namespace isolation: positive control and outside-key probe',
+    'multi' => 'R6: the probe queues prohibited commands inside MULTI, so the ACL answers without running them (EXEC is never allowed)',
     'set' => 'namespace isolation: positive control and outside-key probe',
     'unlink' => 'clean-up deletes only the keys a test recorded (ADR-0022 §6)',
 ];
