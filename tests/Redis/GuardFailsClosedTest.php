@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Redis;
 use Symfony\Component\Process\Process;
 use Tests\Support\ChildProcess;
+use Tests\Support\Redis\NegativeControls;
 use Tests\Support\Redis\RedisGate;
 
 /*
@@ -78,18 +79,4 @@ it('fails closed before any command', function (string $rule, array $overrides, 
     if ($elsewhere !== null) {
         expect(redisMarker($elsewhere))->toBeFalse();
     }
-})->with([
-    'R1 wrong host' => ['R1', ['REDIS_HOST' => '127.0.0.2'], null],
-    'R1 remote host' => ['R1', ['REDIS_HOST' => 'redis.example.com'], null],
-    'R2 URL' => ['R2', ['REDIS_URL' => 'redis://nexo_test:nexo_test@127.0.0.1:6379'], null],
-    'R2 TLS URL' => ['R2', ['REDIS_URL' => 'tls://127.0.0.1:6379'], null],
-    'R3 admin identity' => ['R3', ['REDIS_USERNAME' => 'nexo_ci_admin'], null],
-    'R3 default user' => ['R3', ['REDIS_USERNAME' => ''], null],
-    'R3 no password (Laravel would skip AUTH)' => ['R3', ['REDIS_PASSWORD' => ''], null],
-    'R4 production prefix' => ['R4', ['REDIS_PREFIX' => 'nexo_production:'], null],
-    'R4 other prefix inside the ACL namespace' => ['R4', ['REDIS_PREFIX' => 'nexo_testing:other:'], 'nexo_testing:other:probe:marker'],
-    'R4 no prefix' => ['R4', ['REDIS_PREFIX' => ''], null],
-    'R5 database 0 is still a SELECT' => ['R5', ['REDIS_DB' => '0'], null],
-    'R5 cache database' => ['R5', ['REDIS_CACHE_DB' => '1'], null],
-    'R6 wrong password' => ['R6', ['REDIS_PASSWORD' => 'not-the-password'], null],
-]);
+})->with(NegativeControls::CASES);

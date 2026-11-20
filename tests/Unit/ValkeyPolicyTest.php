@@ -75,17 +75,43 @@ it('detects an executed prohibited command, an unlisted command and an unused en
     expect(implode("\n", ValkeyPolicy::commandStatsViolations(liveStats($overrides), UsersAcl::inventory())))->toContain($violation);
 })->with([
     'FLUSHDB executed' => [['flushdb' => [1, 12]], 'the prohibited command [flushdb] executed 1 time(s)'],
-    'EXEC executed' => [['exec' => [1]], 'the prohibited command [exec] executed'],
+    'SWAPDB executed' => [['swapdb' => [1]], 'the prohibited command [swapdb] executed'],
+    'FLUSHALL executed' => [['flushall' => [1]], 'the prohibited command [flushall] executed'],
     'COPY executed' => [['copy' => [2]], 'the prohibited command [copy] executed'],
     'a CONFIG subcommand executed' => [['config|get' => [1]], 'the prohibited command [config|get] executed'],
     'SELECT executed' => [['select' => [1]], 'the prohibited command [select] executed'],
     'a command outside the inventory' => [['hgetall' => [3]], '[hgetall] executed 3 time(s) but is not in the command inventory'],
     'EVALSHA executed' => [['evalsha' => [1]], '[evalsha] executed 1 time(s) but is not in the command inventory'],
     'an inventory entry never used' => [['zremrangebyrank' => [0]], 'the inventory entry [zremrangebyrank] never executed'],
+    'EXEC never used' => [['exec' => [0, 2]], 'the inventory entry [exec] never executed'],
 ]);
 
 it('refuses to pass on empty statistics', function (): void {
     expect(ValkeyPolicy::commandStatsViolations('', UsersAcl::inventory()))->toBe(['INFO commandstats reported no commands; nothing was checked']);
+});
+
+it('accepts negative controls that changed nothing but the admin snapshot and the refused AUTHs', function (): void {
+    $before = liveStats(['auth' => [10], 'info' => [3]]);
+    $after = liveStats(['auth' => [12], 'info' => [4]]);
+    $after = str_replace('cmdstat_auth:calls=12,usec=10,usec_per_call=2.00,rejected_calls=0,failed_calls=0', 'cmdstat_auth:calls=12,usec=10,usec_per_call=2.00,rejected_calls=0,failed_calls=1', $after);
+
+    expect(ValkeyPolicy::negativeControlViolations($before, $after, authAttempts: 1))->toBe([]);
+});
+
+it('detects a negative-control child that reached the server', function (array $after, int $authAttempts, string $violation): void {
+    $before = liveStats(['auth' => [10], 'info' => [3]]);
+
+    expect(implode("\n", ValkeyPolicy::negativeControlViolations($before, liveStats($after), $authAttempts)))->toContain($violation);
+})->with([
+    'a SET executed' => [['auth' => [11], 'info' => [4], 'set' => [6]], 0, 'changed [set] calls by 1, expected 0'],
+    'a refused FLUSHDB attempt' => [['auth' => [11], 'info' => [4], 'flushdb' => [0, 13]], 0, 'changed [flushdb] rejected by 1, expected 0'],
+    'an extra authentication' => [['auth' => [12], 'info' => [4]], 0, 'changed [auth] calls by 2, expected 1'],
+    'a new command' => [['auth' => [11], 'info' => [4], 'hgetall' => [1]], 0, 'changed [hgetall] calls by 1, expected 0'],
+    'the wrong-password AUTH missing' => [['auth' => [11], 'info' => [4]], 1, 'changed [auth] calls by 1, expected 2'],
+]);
+
+it('refuses to pass the negative controls on empty statistics', function (): void {
+    expect(ValkeyPolicy::negativeControlViolations('', liveStats(), 1))->toHaveCount(1);
 });
 
 it('keeps the admin rights in start.sh equal to the policy', function (): void {

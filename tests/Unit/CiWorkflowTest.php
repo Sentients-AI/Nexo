@@ -113,6 +113,25 @@ it('enforces the package policy before dependencies are installed and before any
     }
 });
 
+it('proves from the server that the negative-control children send no command', function (): void {
+    $steps = ciTestJobSteps();
+    $names = array_keys($steps);
+    $name = 'Prove the negative-control children send no Redis command';
+    $step = $steps[$name] ?? '';
+
+    $before = strpos($step, '.github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/negative-before.txt"');
+    $run = strpos($step, 'php tests/Redis/bin/run-negative-controls.php');
+    $after = strpos($step, '.github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/negative-after.txt"');
+    $verify = strpos($step, 'php tests/Redis/bin/verify-negative-controls.php "$RUNNER_TEMP/negative-before.txt" "$RUNNER_TEMP/negative-after.txt"');
+
+    expect($names)->toContain($name)
+        ->and([$before, $run, $after, $verify])->not->toContain(false)
+        ->and($before < $run && $run < $after && $after < $verify)->toBeTrue('snapshot, run, snapshot, verify')
+        ->and($step)->not->toContain('continue-on-error')
+        ->and($step)->not->toContain('if:')
+        ->and(array_search($name, $names, true))->toBeGreaterThan(array_search('Run Redis tests', $names, true));
+});
+
 it('checks the live ACL and command statistics after every test stage', function (): void {
     $steps = ciTestJobSteps();
     $names = array_keys($steps);

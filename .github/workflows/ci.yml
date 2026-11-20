@@ -151,6 +151,16 @@ jobs:
       - name: Run Redis tests
         run: php artisan test --testsuite=Redis
 
+      # ADR-0022 §7: the unsafe-environment children, alone between two admin
+      # snapshots, so the server shows they sent no command (one failed AUTH
+      # for the wrong-password case is the only expected change).
+      - name: Prove the negative-control children send no Redis command
+        run: |
+          .github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/negative-before.txt"
+          php tests/Redis/bin/run-negative-controls.php
+          .github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/negative-after.txt"
+          php tests/Redis/bin/verify-negative-controls.php "$RUNNER_TEMP/negative-before.txt" "$RUNNER_TEMP/negative-after.txt"
+
       # After every test stage, including when one of them failed.
       - name: Verify the Valkey sentinel is unchanged
         if: ${{ !cancelled() && steps.sentinel.outcome == 'success' }}

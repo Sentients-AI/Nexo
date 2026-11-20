@@ -127,6 +127,69 @@ final class ValkeyPolicy
     }
 
     /**
+     * ADR-0022 §7: the unsafe children sent the server nothing.
+     *
+     * $before and $after are INFO commandstats taken by the admin around a
+     * run of the negative-control children and nothing else. Expected change:
+     * the admin's own second snapshot (one AUTH, one INFO), plus one failed
+     * AUTH per child that the server, not the pure guard, had to refuse.
+     * Any other change, executed, rejected or failed, means a child sent a
+     * command.
+     *
+     * @return list<string>
+     */
+    public static function negativeControlViolations(string $before, string $after, int $authAttempts): array
+    {
+        $old = self::parseCommandCounts($before);
+        $new = self::parseCommandCounts($after);
+
+        if ($old === [] || $new === []) {
+            return ['INFO commandstats was empty before or after the negative controls; nothing was checked'];
+        }
+
+        $expected = [
+            'auth' => ['calls' => 1 + $authAttempts, 'rejected' => 0, 'failed' => $authAttempts],
+            'info' => ['calls' => 1, 'rejected' => 0, 'failed' => 0],
+        ];
+
+        $violations = [];
+
+        foreach (array_unique([...array_keys($old), ...array_keys($new)]) as $command) {
+            foreach (['calls', 'rejected', 'failed'] as $counter) {
+                $delta = ($new[$command][$counter] ?? 0) - ($old[$command][$counter] ?? 0);
+                $allowed = $expected[$command][$counter] ?? 0;
+
+                if ($delta !== $allowed) {
+                    $violations[] = "the negative-control children changed [{$command}] {$counter} by {$delta}, expected {$allowed}";
+                }
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * @return array<string, array{calls: int, rejected: int, failed: int}>
+     */
+    public static function parseCommandCounts(string $commandStats): array
+    {
+        preg_match_all(
+            '/^cmdstat_([a-z0-9_|-]+):calls=(\d+),.*?rejected_calls=(\d+),failed_calls=(\d+)/m',
+            $commandStats,
+            $matches,
+            PREG_SET_ORDER,
+        );
+
+        $counts = [];
+
+        foreach ($matches as [, $command, $calls, $rejected, $failed]) {
+            $counts[$command] = ['calls' => (int) $calls, 'rejected' => (int) $rejected, 'failed' => (int) $failed];
+        }
+
+        return $counts;
+    }
+
+    /**
      * @return array<string, int> Command => executed calls (not rejected).
      */
     public static function parseCommandStats(string $commandStats): array
