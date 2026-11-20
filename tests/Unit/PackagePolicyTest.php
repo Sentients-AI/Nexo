@@ -104,6 +104,40 @@ it('allows a package that only mentions a prohibited one without installing it',
     ])))->toBe([]);
 });
 
+it('fails a package that replaces or provides a prohibited one', function (string $link, string $target, string $section): void {
+    $record = lockPackage('acme/stand-in', [$link => ['symfony/polyfill-php80' => '*', $target => '*']]);
+    $lock = $section === 'packages' ? lockJson([$record]) : lockJson([], [$record]);
+
+    $violations = PackagePolicy::violations($lock);
+
+    expect($violations)->toHaveCount(1)
+        ->and($violations[0])->toStartWith("acme/stand-in {$link}s {$target} (composer.lock \"{$section}\"), standing in for a prohibited package");
+})->with([
+    'replace predis' => ['replace', 'predis/predis', 'packages'],
+    'provide laravel-trace' => ['provide', 'adilazhari/laravel-trace', 'packages'],
+    'replace laravel-idempotency, dev' => ['replace', 'adilazhari/laravel-idempotency', 'packages-dev'],
+    'provide in mixed case' => ['provide', 'Predis/Predis', 'packages'],
+]);
+
+it('allows replace and provide maps that name only permitted packages', function (): void {
+    // As symfony/polyfill-* and psr implementations do in the real lockfile.
+    expect(PackagePolicy::violations(lockJson([
+        lockPackage('symfony/polyfill-php80', ['replace' => ['symfony/polyfill-php54' => '*']]),
+        lockPackage('guzzlehttp/psr7', ['provide' => ['psr/http-message-implementation' => '1.0', 'predis/predis-async' => '*']]),
+        lockPackage('acme/empty', ['replace' => [], 'provide' => []]),
+    ])))->toBe([]);
+});
+
+it('fails closed on a malformed replace or provide', function (mixed $value): void {
+    expect(PackagePolicy::violations(lockJson([lockPackage('acme/odd', ['replace' => $value])])))
+        ->toBe(['acme/odd (composer.lock "packages") has a "replace" that is not a map of package names']);
+})->with([
+    'a string' => 'predis/predis',
+    'a list' => [['predis/predis']],
+    'a number' => 1,
+    'null' => null,
+]);
+
 it('allows unrelated packages with similar names', function (string $name): void {
     expect(PackagePolicy::violations(lockJson([lockPackage($name)])))->toBe([]);
 })->with([

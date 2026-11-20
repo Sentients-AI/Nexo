@@ -11,14 +11,20 @@ use JsonException;
  *
  * Reads composer.lock, the record of what Composer installs, including every
  * transitive dependency, and fails if a prohibited package is among the
- * installed records in `packages` or `packages-dev`. Names match exactly,
- * ignoring case, as Composer treats them. A package that only mentions a
- * prohibited one (in its `require-dev`, `suggest`, `conflict` and so on) is
- * not installing it and passes.
+ * installed records in `packages` or `packages-dev`, or if an installed
+ * record substitutes for one through its `replace` or `provide` map. Names
+ * match exactly, ignoring case, as Composer treats them. A package that only
+ * refers to a prohibited one (in `require`, `require-dev`, `suggest`,
+ * `conflict` and so on) is not installing it and passes.
+ *
+ * The substitution rule is conservative: it rejects any declared stand-in,
+ * without proving the stand-in contains the prohibited code (or that a
+ * package declaring nothing does not).
  *
  * Fails closed: a missing or unreadable file, invalid JSON, a missing or
- * malformed section, or a record without a valid name is a violation, never
- * a pass.
+ * malformed section, a record without a valid name, or a `replace` or
+ * `provide` that is not a name-to-constraint map is a violation, never a
+ * pass.
  *
  * Dependency-free on purpose, so CI can run it before `composer install`
  * (tests/bin/check-package-policy.php).
@@ -101,6 +107,50 @@ final class PackagePolicy
                 if (array_key_exists($normalised, self::PROHIBITED)) {
                     $violations[] = "{$name} is installed (composer.lock \"{$section}\"): ".self::PROHIBITED[$normalised]
                         .'. Remove it (composer remove, or find what requires it with composer why '.$normalised.').';
+                }
+
+                array_push($violations, ...self::substitutionViolations($name, $section, (array) $package));
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * A package that `replace`s or `provide`s a prohibited one stands in for
+     * it, so Composer would treat the prohibited package as installed.
+     *
+     * @param  array<mixed>  $package
+     * @return list<string>
+     */
+    private static function substitutionViolations(string $name, string $section, array $package): array
+    {
+        $violations = [];
+
+        foreach (['replace', 'provide'] as $link) {
+            if (! array_key_exists($link, $package)) {
+                continue;
+            }
+
+            $targets = $package[$link];
+
+            // Composer writes an empty map as [] in a lockfile.
+            if ($targets === []) {
+                continue;
+            }
+
+            if (! is_array($targets) || array_is_list($targets)) {
+                $violations[] = "{$name} (composer.lock \"{$section}\") has a \"{$link}\" that is not a map of package names";
+
+                continue;
+            }
+
+            foreach (array_keys($targets) as $target) {
+                $normalised = strtolower((string) $target);
+
+                if (array_key_exists($normalised, self::PROHIBITED)) {
+                    $violations[] = "{$name} {$link}s {$target} (composer.lock \"{$section}\"), standing in for a prohibited package: "
+                        .self::PROHIBITED[$normalised].'. Remove '.$name.' or get an owner decision.';
                 }
             }
         }
