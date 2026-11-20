@@ -73,6 +73,9 @@ final class RedisContract implements Scenario
             // A real worker for one job on one queue only.
             'queue-work' => self::work($app, (string) $arguments['queue']),
 
+            // Reports the namespace this worker was given, and writes there.
+            'prefix' => self::reportPrefix($key, $worker),
+
             default => throw new InvalidArgumentException('Unknown op: '.var_export($arguments['op'] ?? null, true)),
         };
     }
@@ -86,6 +89,20 @@ final class RedisContract implements Scenario
         }
 
         return $store->lock($key, $seconds);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function reportPrefix(string $key, int $worker): array
+    {
+        $client = Redis::connection()->client();
+        Redis::connection()->setex($key, 60, 'worker-'.$worker);
+
+        return [
+            'prefix' => $client instanceof \Redis ? $client->getOption(\Redis::OPT_PREFIX) : null,
+            'cache_prefix' => Cache::store('redis')->getPrefix(),
+        ];
     }
 
     /**

@@ -118,7 +118,11 @@ final class Concurrently
 
     /**
      * The runtime database settings of the parent's default connection, plus
-     * the cache store and lock connection the tests use.
+     * the cache store and lock connection the tests use, and the parent's
+     * Redis and cache prefixes. Workers are never parallel workers
+     * themselves (ChildProcess removes TEST_TOKEN), so a parallel parent's
+     * nexo_testing:test_<N>: namespace (ADR-0022 §4) is handed down here
+     * explicitly, as its database is, and the worker's guard checks it.
      *
      * @return array<string, string|false>
      */
@@ -143,6 +147,8 @@ final class Concurrently
             'DB_SOCKET' => '',
             'CACHE_STORE' => 'database',
             'DB_CACHE_LOCK_CONNECTION' => 'mysql_locks',
+            'REDIS_PREFIX' => $string($config->get('database.redis.options.prefix')),
+            'CACHE_PREFIX' => $string($config->get('cache.prefix')),
         ];
     }
 
