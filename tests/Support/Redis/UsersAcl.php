@@ -25,16 +25,24 @@ final class UsersAcl
     public const string PASSWORD_SHA256 = '698c20b9581b06deaaba55b1f6e9bcfe4a9b2abd798bcc70678d298e03dc4d13';
 
     /**
-     * ADR-0022 §6. ACL WHOAMI is the one allowed exception to `acl`.
+     * ADR-0022 §6, plus two commands Slice 3 rules out:
+     * - `copy`: its DB option writes into another database, which the ACL's
+     *   key patterns do not restrict (database switching stays impossible);
+     * - `exec`: the R6 probe queues destructive commands inside MULTI and is
+     *   safe even on a misconfigured server only because nothing it queues
+     *   can be executed.
+     *
+     * ACL WHOAMI is the one allowed exception to `acl`.
      *
      * @var list<string>
      */
     public const array PROHIBITED = [
-        'flushall', 'flushdb', 'swapdb', 'select', 'move', 'migrate', 'rename', 'renamenx',
+        'flushall', 'flushdb', 'swapdb', 'select', 'move', 'migrate', 'rename', 'renamenx', 'copy',
         'keys', 'scan', 'randomkey',
         'config', 'debug', 'shutdown', 'save', 'bgsave', 'bgrewriteaof', 'replicaof', 'slaveof',
         'failover', 'cluster', 'module', 'acl', 'monitor', 'client|kill', 'client|pause',
         'script|flush', 'function|flush', 'function|delete', 'function|load',
+        'exec',
     ];
 
     public static function path(): string

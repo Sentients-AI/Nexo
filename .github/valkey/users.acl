@@ -1,2 +1,2 @@
 user default off resetpass resetkeys resetchannels -@all
-user nexo_test on #698c20b9581b06deaaba55b1f6e9bcfe4a9b2abd798bcc70678d298e03dc4d13 resetkeys ~nexo_testing:* resetchannels &nexo_testing:* -@all +acl|whoami +discard +get +multi +set +unlink
+user nexo_test on #698c20b9581b06deaaba55b1f6e9bcfe4a9b2abd798bcc70678d298e03dc4d13 resetkeys ~nexo_testing:* resetchannels &nexo_testing:* -@all +acl|whoami +decrby +del +discard +eval +exists +expire +get +hget +hincrby +hmset +incrby +llen +lpop +mget +multi +pttl +rpush +set +setex +unlink +zadd +zcard +zrangebyscore +zrem +zremrangebyrank
