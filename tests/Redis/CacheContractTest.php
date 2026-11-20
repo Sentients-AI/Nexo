@@ -82,6 +82,36 @@ it('stores a value forever with no TTL', function (): void {
     expect(serverPttl($full))->toBe(-1);
 });
 
+it('stores every value of putMany, each with its TTL', function (): void {
+    // putMany() is MULTI, one SETEX per key, EXEC. With EXEC refused it
+    // returned true and stored nothing; this is the regression.
+    [$a, $fullA] = cacheKey('cache:many:a');
+    [$b, $fullB] = cacheKey('cache:many:b');
+    [$c, $fullC] = cacheKey('cache:many:c');
+    $cache = Cache::store('redis');
+
+    expect($cache->putMany([$a => 'one', $b => 2, $c => ['three' => 3]], 60))->toBeTrue()
+        ->and($cache->get($a))->toBe('one')
+        ->and((int) $cache->get($b))->toBe(2)
+        ->and($cache->get($c))->toBe(['three' => 3]);
+
+    foreach ([$fullA, $fullB, $fullC] as $full) {
+        expect(serverPttl($full))->toBeGreaterThan(0)->toBeLessThanOrEqual(60_000);
+    }
+});
+
+it('reads many values at once, with null for missing keys', function (): void {
+    [$a] = cacheKey('cache:many-read:a');
+    [$missing] = cacheKey('cache:many-read:missing');
+    [$b] = cacheKey('cache:many-read:b');
+    $cache = Cache::store('redis');
+
+    $cache->put($a, 'first', 60);
+    $cache->put($b, 'second', 60);
+
+    expect($cache->many([$a, $missing, $b]))->toBe([$a => 'first', $missing => null, $b => 'second']);
+});
+
 it('adds only when the key is absent, keeping the first value and its TTL', function (): void {
     [$key, $full] = cacheKey('cache:add');
     $cache = Cache::store('redis');

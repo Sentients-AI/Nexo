@@ -25,12 +25,16 @@ final class UsersAcl
     public const string PASSWORD_SHA256 = '698c20b9581b06deaaba55b1f6e9bcfe4a9b2abd798bcc70678d298e03dc4d13';
 
     /**
-     * ADR-0022 §6, plus two commands Slice 3 rules out:
-     * - `copy`: its DB option writes into another database, which the ACL's
-     *   key patterns do not restrict (database switching stays impossible);
-     * - `exec`: the R6 probe queues destructive commands inside MULTI and is
-     *   safe even on a misconfigured server only because nothing it queues
-     *   can be executed.
+     * ADR-0022 §6, plus `copy`: its DB option writes into another database,
+     * which the ACL's key patterns do not restrict (database switching stays
+     * impossible).
+     *
+     * EXEC is not here: Laravel's RedisStore::putMany() needs MULTI/EXEC, and
+     * denying EXEC made it report success while storing nothing. It is safe
+     * to allow because the ACL checks every command when it is queued, so a
+     * transaction holding a prohibited command aborts as a whole
+     * (tests/Redis/TransactionContractTest.php), and the R6 probe never sends
+     * EXEC (tests/Unit/NonExecutingProbeTest.php).
      *
      * ACL WHOAMI is the one allowed exception to `acl`.
      *
@@ -42,7 +46,6 @@ final class UsersAcl
         'config', 'debug', 'shutdown', 'save', 'bgsave', 'bgrewriteaof', 'replicaof', 'slaveof',
         'failover', 'cluster', 'module', 'acl', 'monitor', 'client|kill', 'client|pause',
         'script|flush', 'function|flush', 'function|delete', 'function|load',
-        'exec',
     ];
 
     public static function path(): string

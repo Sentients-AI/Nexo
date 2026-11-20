@@ -59,17 +59,6 @@ it('R6 probe: the server refuses every probed command inside a discarded transac
         ->and(Redis::connection()->set(RedisKeys::track('acl:after-probe'), '1'))->toBeTrue();
 });
 
-it('refuses EXEC, so nothing queued can ever run as the test identity', function (): void {
-    $key = RedisKeys::track('acl:queued');
-    $client = Redis::connection()->client();
-
-    expect($client->rawCommand('MULTI'))->toBeTrue()
-        ->and($client->rawCommand('SET', 'nexo_testing:acl:queued', 'ran'))->toBeTrue()
-        ->and(redisRefusal(['EXEC']))
-        ->toBe("EXECABORT Transaction discarded because of: NOPERM User nexo_test has no permissions to run the 'exec' command")
-        ->and(Redis::connection()->get($key))->toBeNull();
-});
-
 it('refuses a prohibited command', function (string $rule, array $command): void {
     expect(redisRefusal($command))
         ->toStartWith("NOPERM User nexo_test has no permissions to run the '{$rule}' command");
