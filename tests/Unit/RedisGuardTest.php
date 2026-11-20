@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Tests\Support\Database\GuardInput;
 use Tests\Support\Database\TestDatabaseGuard;
+use Tests\Support\Redis\GuardedRedisManager;
 
 /*
  * ADR-0022 §5: the pure Redis rules R1-R5, proven without a server.
@@ -99,6 +100,34 @@ it('R3 requires the nexo_test identity', function (mixed $username): void {
     'empty' => '',
     'the admin user' => 'nexo_ci_admin',
     'a look-alike' => 'nexo_test ',
+]);
+
+it('R3 requires a password, because without one Laravel never authenticates', function (mixed $password): void {
+    expect(redisRuleIds(['default' => safeRedisConnection(['password' => $password])]))->toBe(['R3']);
+})->with([
+    'missing' => null,
+    'empty' => '',
+    'not a string' => 0,
+]);
+
+it('R3 never shows the password', function (): void {
+    $input = new GuardInput(false, null, 'testing', redis: ['default' => safeRedisConnection(['password' => 'hunter2', 'username' => 'x'])]);
+
+    expect(implode("\n", TestDatabaseGuard::violations($input)))->not->toContain('hunter2');
+});
+
+it('accepts a connection only when the server says it is nexo_test', function (): void {
+    expect(GuardedRedisManager::identityViolation('default', 'nexo_test'))->toBeNull();
+});
+
+it('rejects any other authenticated identity', function (mixed $whoami): void {
+    expect(GuardedRedisManager::identityViolation('cache', $whoami))
+        ->toStartWith('R6 redis connection [cache] is authenticated as');
+})->with([
+    'the default user' => 'default',
+    'the admin user' => 'nexo_ci_admin',
+    'an error reply' => false,
+    'no reply' => null,
 ]);
 
 it('R4 requires the nexo_testing: namespace', function (mixed $prefix): void {

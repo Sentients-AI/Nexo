@@ -217,6 +217,16 @@ final class TestDatabaseGuard
                     .", expected '".self::REDIS_USERNAME."'";
             }
 
+            // Laravel sends AUTH only when the password is not empty. Without
+            // one, the connection runs as the server's `default` user, whatever
+            // username is configured. The value itself is never shown.
+            $password = $config['password'] ?? null;
+
+            if (! is_string($password) || $password === '') {
+                $violations[] = 'R3 '.$label.' has no password, so Laravel would not authenticate and the connection'
+                    ." would run as the server's default user";
+            }
+
             $prefix = $config['prefix'] ?? null;
 
             if (! is_string($prefix) || preg_match(self::REDIS_PREFIX_PATTERN, $prefix) !== 1) {

@@ -52,7 +52,10 @@
         <env name="DB_CHARSET" value="utf8mb4"/>
         <env name="DB_COLLATION" value="utf8mb4_0900_ai_ci"/>
         <!-- Redis test identity and namespace (ADR-0022 §4, guard R1-R5). Not
-             forced, like DB_*: CI sets REDIS_PASSWORD. The databases are unset
+             forced, like DB_*. The password is the disposable CI one
+             (.github/valkey/users.acl); it is set so that Laravel always
+             authenticates: with no password it skips AUTH and the connection
+             runs as the server's default user (R3). The databases are unset
              ("null"): Laravel would SELECT any configured database, even 0,
              and the ACL denies SELECT. -->
         <env name="REDIS_CLIENT" value="phpredis"/>
@@ -60,6 +63,7 @@
         <env name="REDIS_HOST" value="127.0.0.1"/>
         <env name="REDIS_PORT" value="6379"/>
         <env name="REDIS_USERNAME" value="nexo_test"/>
+        <env name="REDIS_PASSWORD" value="nexo_test"/>
         <env name="REDIS_PREFIX" value="nexo_testing:"/>
         <env name="REDIS_DB" value="null"/>
         <env name="REDIS_CACHE_DB" value="null"/>

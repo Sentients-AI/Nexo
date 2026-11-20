@@ -11,6 +11,7 @@ use Illuminate\Testing\ParallelTesting;
 use Tests\Support\Database\GuardInput;
 use Tests\Support\Database\LockConnection;
 use Tests\Support\Database\TestDatabaseGuard;
+use Tests\Support\Redis\GuardedRedisManager;
 
 /**
  * The only way tests create the application.
@@ -63,6 +64,10 @@ trait CreatesApplication
         $loadedAs = is_string($loadedAs) ? $loadedAs : null;
 
         TestDatabaseGuard::enforce(GuardInput::fromApplication($app)->withAppEnv($loadedAs));
+
+        // Every Redis connection a test resolves, in any suite, proves its
+        // identity before it is handed out (ADR-0022 §5, R6).
+        GuardedRedisManager::install($app);
 
         // Under --parallel, Laravel's own set-up callback (registered while
         // the application booted, so it runs first) switches only the default
