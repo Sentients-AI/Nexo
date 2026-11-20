@@ -53,6 +53,9 @@ jobs:
       # disposable, like DB_PASSWORD.
       NEXO_TEST_REDIS: '1'
       REDIS_PASSWORD: nexo_test
+      # A second, throwaway Valkey that only tests/Redis/ProbeReconnectTest.php
+      # touches (.github/valkey/start-disposable.sh).
+      NEXO_TEST_DISPOSABLE_REDIS_PORT: '6391'
 
     steps:
       - name: Checkout
@@ -63,6 +66,13 @@ jobs:
       # container, because a service cannot mount the repository's config.
       - name: Start Valkey
         run: bash .github/valkey/start.sh
+
+      # The misconfigured server the R6 probe must survive: open default user,
+      # 127.0.0.1 only, no persistence, nothing on it but a marker. The
+      # reconnect test drops its own probe connection here, never on the
+      # test Valkey above.
+      - name: Start the disposable Valkey for the reconnect test
+        run: bash .github/valkey/start-disposable.sh
 
       # ADR-0022 §7: a key outside nexo_testing:, written by the admin user
       # before any test runs, and verified after all of them. A limited

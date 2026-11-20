@@ -62,6 +62,20 @@ it('starts Valkey and seeds the sentinel before any test stage', function (): vo
         ->and(array_search('Seed the Valkey sentinel', $names, true))->toBeLessThan($firstTest);
 });
 
+it('starts the disposable Valkey for the reconnect test before any test stage, on its own port', function (): void {
+    $steps = ciTestJobSteps();
+    $names = array_keys($steps);
+    $name = 'Start the disposable Valkey for the reconnect test';
+    $firstTest = min(array_keys(array_filter(array_values($steps), static fn (string $step): bool => str_contains($step, 'php artisan test'))));
+
+    expect(ciTestJob())->toMatch("/^    env:\n(?:      .+\n)*?      NEXO_TEST_DISPOSABLE_REDIS_PORT: '6391'\n/m")
+        ->and($steps[$name] ?? '')->toContain('run: bash .github/valkey/start-disposable.sh')
+        ->and($steps[$name] ?? '')->not->toContain('continue-on-error')
+        ->and(array_search($name, $names, true))->toBeLessThan($firstTest)
+        // The test Valkey keeps 6379; the disposable one must never share it.
+        ->and((string) file_get_contents(dirname(__DIR__, 2).'/.github/valkey/start.sh'))->toContain('-p 127.0.0.1:6379:6379');
+});
+
 it('runs the Redis suite sequentially, unconditionally and without continue-on-error', function (): void {
     $steps = ciTestJobSteps();
 

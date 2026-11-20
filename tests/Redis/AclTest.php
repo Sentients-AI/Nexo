@@ -43,19 +43,14 @@ it('authenticates every configured connection as nexo_test', function (): void {
 });
 
 it('R6 probe: the server refuses every probed command inside a discarded transaction', function (): void {
-    $client = Redis::connection()->client();
-    $abandoned = false;
+    // A dedicated connection, as RedisGate uses: the probe switches its
+    // reconnect off and closes it.
+    $client = Redis::resolve()->client();
 
-    $violations = NonExecutingProbe::violations(
-        NonExecutingProbe::sender($client),
-        static function () use (&$abandoned): void {
-            $abandoned = true;
-        },
-    );
-
-    expect($violations)->toBe([])
-        ->and($abandoned)->toBeFalse()
-        // The transaction is gone: a normal command runs immediately again.
+    expect(NonExecutingProbe::violationsOn($client))->toBe([])
+        ->and($client->getOption(\Redis::OPT_MAX_RETRIES))->toBe(0)
+        ->and($client->isConnected())->toBeFalse()
+        // The shared connection is untouched and works as usual.
         ->and(Redis::connection()->set(RedisKeys::track('acl:after-probe'), '1'))->toBeTrue();
 });
 

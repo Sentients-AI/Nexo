@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Tests\Support\Redis\NonExecutingProbe;
+use Tests\Support\Redis\ProbeClient;
 
 /*
  * ADR-0022 §5, R6: the destructive-command probe never runs what it asks
@@ -103,7 +104,9 @@ it('counts an error other than NOPERM as not refused', function (): void {
         return refusingEverything($command);
     });
 
-    expect($redis->run())->toBe(['FLUSHDB was not refused by the ACL: ERR unknown command']);
+    expect($redis->run())->toBe(['FLUSHDB was not refused by the ACL (ERR unknown command); the probe stopped and closed the connection'])
+        ->and($redis->sent)->toBe(['MULTI', 'CONFIG GET maxmemory', 'KEYS nexo_testing:r6-probe', 'FLUSHDB'])
+        ->and($redis->abandoned)->toBeTrue();
 });
 
 it('counts a malformed reply to a queued command as permitted, never as refused', function (mixed $reply): void {
@@ -121,23 +124,22 @@ it('counts a malformed reply to a queued command as permitted, never as refused'
     'an integer' => 0,
 ]);
 
-it('closes the connection when the link breaks mid-probe', function (): void {
+it('stops and closes the connection when the link breaks mid-probe, sending nothing after', function (): void {
     $redis = new ScriptedRedis(static function (array $command): mixed {
         if ($command === ['MULTI']) {
             return true;
         }
 
-        throw new RuntimeException('read error on connection');
+        throw new RuntimeException('Connection lost');
     });
 
-    $violations = $redis->run();
-
-    expect($violations)->toContain('DISCARD was not confirmed; the connection was closed')
-        ->and($redis->abandoned)->toBeTrue()
-        ->and($redis->sent)->not->toContain('EXEC');
+    expect($redis->run())->toBe(['CONFIG GET maxmemory was not refused by the ACL (Connection lost); the probe stopped and closed the connection'])
+        // Nothing after the failure: no further probe, no DISCARD, no EXEC.
+        ->and($redis->sent)->toBe(['MULTI', 'CONFIG GET maxmemory'])
+        ->and($redis->abandoned)->toBeTrue();
 });
 
-it('counts any unexpected failure as not refused, and still discards', function (): void {
+it('stops on any unexpected failure rather than carrying on', function (): void {
     $redis = new ScriptedRedis(static function (array $command): mixed {
         if ($command === ['KEYS', 'nexo_testing:r6-probe']) {
             throw new LogicException('unexpected');
@@ -146,9 +148,9 @@ it('counts any unexpected failure as not refused, and still discards', function 
         return refusingEverything($command);
     });
 
-    expect($redis->run())->toBe(['KEYS nexo_testing:r6-probe was not refused by the ACL: unexpected'])
-        ->and(end($redis->sent))->toBe('DISCARD')
-        ->and($redis->abandoned)->toBeFalse();
+    expect($redis->run())->toBe(['KEYS nexo_testing:r6-probe was not refused by the ACL (unexpected); the probe stopped and closed the connection'])
+        ->and(end($redis->sent))->toBe('KEYS nexo_testing:r6-probe')
+        ->and($redis->abandoned)->toBeTrue();
 });
 
 it('closes the connection when DISCARD is not confirmed', function (): void {
@@ -158,4 +160,103 @@ it('closes the connection when DISCARD is not confirmed', function (): void {
 
     expect($redis->run())->toBe(['DISCARD was not confirmed; the connection was closed'])
         ->and($redis->abandoned)->toBeTrue();
+});
+
+/**
+ * A client that records every call, in order, as phpredis would receive it.
+ */
+final class RecordingProbeClient implements ProbeClient
+{
+    /** @var list<string> */
+    public array $calls = [];
+
+    private mixed $retries = 3;
+
+    /**
+     * @param  Closure(list<string>): mixed  $reply
+     */
+    public function __construct(
+        private readonly Closure $reply,
+        private readonly bool $ignoreRetrySetting = false,
+        private readonly bool $failOnSetOption = false,
+    ) {}
+
+    public function setOption(int $option, mixed $value): bool
+    {
+        $this->calls[] = "setOption({$option}, ".var_export($value, true).')';
+
+        if ($this->failOnSetOption) {
+            throw new RuntimeException('not connected');
+        }
+
+        if (! $this->ignoreRetrySetting) {
+            $this->retries = $value;
+        }
+
+        return true;
+    }
+
+    public function getOption(int $option): mixed
+    {
+        $this->calls[] = "getOption({$option})";
+
+        return $this->retries;
+    }
+
+    public function rawCommand(string $command, mixed ...$arguments): mixed
+    {
+        $this->calls[] = implode(' ', [$command, ...$arguments]);
+
+        return ($this->reply)([$command, ...array_map(strval(...), $arguments)]);
+    }
+
+    public function clearLastError(): bool
+    {
+        return true;
+    }
+
+    public function getLastError(): ?string
+    {
+        return null;
+    }
+
+    public function close(): bool
+    {
+        $this->calls[] = 'close';
+
+        return true;
+    }
+}
+
+it('switches phpredis reconnect off, and checks it is off, before sending anything', function (): void {
+    $client = new RecordingProbeClient(refusingEverything(...));
+    $option = NonExecutingProbe::maxRetriesOption();
+
+    expect(NonExecutingProbe::violationsOn($client))->toBe([])
+        ->and(array_slice($client->calls, 0, 3))->toBe(["setOption({$option}, 0)", "getOption({$option})", 'MULTI'])
+        ->and($client->calls)->not->toContain('EXEC')
+        ->and(end($client->calls))->toBe('close');
+});
+
+it('sends nothing when reconnect cannot be switched off', function (bool $ignore, bool $fail): void {
+    $client = new RecordingProbeClient(refusingEverything(...), ignoreRetrySetting: $ignore, failOnSetOption: $fail);
+
+    $violations = NonExecutingProbe::violationsOn($client);
+
+    expect($violations)->toHaveCount(1)
+        ->and($violations[0])->toContain('phpredis reconnect could not be switched off')
+        ->and($violations[0])->toEndWith('nothing was sent')
+        ->and(array_filter($client->calls, static fn (string $call): bool => ! str_starts_with($call, 'setOption') && ! str_starts_with($call, 'getOption') && $call !== 'close'))->toBe([])
+        ->and(end($client->calls))->toBe('close');
+})->with([
+    'the setting is ignored' => [true, false],
+    'setting it fails' => [false, true],
+]);
+
+it('closes the probe connection after a probe that found a permitted command', function (): void {
+    $client = new RecordingProbeClient(static fn (array $command): bool => true);
+
+    expect(NonExecutingProbe::violationsOn($client))->toHaveCount(4)
+        ->and($client->calls)->not->toContain('EXEC')
+        ->and(end($client->calls))->toBe('close');
 });

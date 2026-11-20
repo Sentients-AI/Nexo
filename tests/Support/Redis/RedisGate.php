@@ -19,9 +19,10 @@ use Tests\Support\Database\TestDatabaseGuardViolation;
  * 2. R6, live, once per process before the first test: for every configured
  *    Redis connection,
  *    - GuardedRedisManager connects (AUTH) and checks ACL WHOAMI;
- *    - NonExecutingProbe asks, inside a discarded MULTI, whether CONFIG GET,
+ *    - NonExecutingProbe asks, on a dedicated connection with phpredis's
+ *      reconnect switched off, inside a discarded MULTI, whether CONFIG GET,
  *      KEYS, FLUSHDB and FLUSHALL are permitted. Nothing queued is executed.
- *    The probe connections are then closed, so tests start on fresh ones.
+ *    The probe connections are then closed and never reused.
  *    Any failure is final for the process: every later test fails with the
  *    same reason and opens no connection. Connections after a failing one
  *    are still checked, so the report is complete.
@@ -118,8 +119,12 @@ final class RedisGate
         $violations = [];
 
         foreach (self::connectionNames() as $name) {
+            // A connection of its own, never cached or reused: resolve()
+            // builds a fresh one (identity-checked by GuardedRedisManager),
+            // and the probe closes it, so no test ever receives a client whose
+            // retries were switched off or whose transaction state is unknown.
             try {
-                $client = Redis::connection($name)->client();
+                $client = Redis::resolve($name)->client();
             } catch (TestDatabaseGuardViolation $e) {
                 array_push($violations, ...$e->violations);
 
@@ -132,18 +137,9 @@ final class RedisGate
                 continue;
             }
 
-            $probe = NonExecutingProbe::violations(
-                NonExecutingProbe::sender($client),
-                static function () use ($client): void {
-                    $client->close();
-                },
-            );
-
-            foreach ($probe as $violation) {
+            foreach (NonExecutingProbe::violationsOn($client) as $violation) {
                 $violations[] = 'R6 redis connection ['.$name.'] '.$violation.'; the ADR-0022 ACL is not in force';
             }
-
-            Redis::purge($name);
         }
 
         return $violations;
