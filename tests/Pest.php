@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ContinuousIntegration;
 use Tests\Support\Redis\RedisGate;
 use Tests\Support\Redis\RedisKeys;
 use Tests\TestCase;
