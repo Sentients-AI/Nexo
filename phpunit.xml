@@ -33,7 +33,10 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
-        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <!-- In-memory, per process: the file driver writes storage/framework/down,
+             which every parallel test process shares, so the maintenance-mode test
+             in ErrorPagesTest leaked 503s into other processes. -->
+        <env name="APP_MAINTENANCE_DRIVER" value="array"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <!-- Unit tests boot no application. Feature and concurrency tests use the
