@@ -98,6 +98,132 @@ final class Rules
     }
 
     /**
+     * C1: modules and the shared kernel never import the composition root
+     * (App\Providers, kernel-level App\Http) or App\Models. Identity alone may
+     * import App\Models\User, until User moves into it (ADR-0010 §2b).
+     */
+    public static function compositionRootIsNotImported(string $app): void
+    {
+        $root = ["{$app}\\Providers", "{$app}\\Http", "{$app}\\Models"];
+
+        foreach (Registry::MODULES as $module) {
+            $expectation = expect("{$app}\\Modules\\{$module}")->not->toUse($root);
+
+            if ($module === 'Identity') {
+                $expectation->ignoring("{$app}\\Models\\User");
+            }
+        }
+
+        expect("{$app}\\Shared")->not->toUse($root);
+    }
+
+    /**
+     * Composition root (ADR-0010 §2a, owner decision D4): App\Providers and
+     * kernel-level App\Http import module Contracts, and module Http, Filament
+     * or Infrastructure classes to register them, never a module's Domain or
+     * Application. A module's service provider lives in its Infrastructure.
+     */
+    public static function compositionRootOnlyRegisters(string $app): void
+    {
+        $internals = [];
+
+        foreach (Registry::MODULES as $module) {
+            $internals[] = "{$app}\\Modules\\{$module}\\Domain";
+            $internals[] = "{$app}\\Modules\\{$module}\\Application";
+        }
+
+        expect("{$app}\\Providers")->not->toUse($internals);
+        expect("{$app}\\Http")->not->toUse($internals);
+    }
+
+    /**
+     * C2: the legacy allowlist is closed. App\Models holds only User and
+     * App\Http\Controllers only Controller; each exit removes its entry.
+     */
+    public static function legacyAllowlistIsClosed(string $appDirectory): void
+    {
+        $violations = [];
+
+        foreach (['Models' => ['User.php'], 'Http/Controllers' => ['Controller.php']] as $directory => $allowed) {
+            foreach (self::phpFilesUnder("{$appDirectory}/{$directory}") as $file) {
+                if (! in_array($file, $allowed, true)) {
+                    $violations[] = "{$directory}/{$file}";
+                }
+            }
+        }
+
+        expect($violations)->toBe([], 'Outside the closed legacy allowlist: '.implode(', ', $violations));
+    }
+
+    /**
+     * C3: App\Modules holds only the 13 modules, each module only the six
+     * sub-namespaces, and a directory exists only once a class is written in
+     * it (ADR-0010 §1, owner decision D2).
+     */
+    public static function moduleTreeIsCanonical(string $modulesDirectory): void
+    {
+        if (! is_dir($modulesDirectory)) {
+            return;
+        }
+
+        $violations = [];
+
+        foreach (new \FilesystemIterator($modulesDirectory) as $entry) {
+            $name = $entry->getFilename();
+
+            if (! $entry->isDir() || ! in_array($name, Registry::MODULES, true)) {
+                $violations[] = "{$name} is not a module";
+
+                continue;
+            }
+
+            foreach (new \FilesystemIterator($entry->getPathname()) as $child) {
+                if (! $child->isDir() || ! in_array($child->getFilename(), Registry::SUB_NAMESPACES, true)) {
+                    $violations[] = "{$name}/{$child->getFilename()} is not a sub-namespace";
+                }
+            }
+        }
+
+        $directories = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($modulesDirectory, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST,
+        );
+
+        foreach ($directories as $directory) {
+            if ($directory->isDir() && self::phpFilesUnder($directory->getPathname()) === []) {
+                $relative = substr($directory->getPathname(), strlen($modulesDirectory) + 1);
+                $violations[] = str_replace('\\', '/', $relative).' has no class';
+            }
+        }
+
+        expect($violations)->toBe([], 'App\Modules breaks C3: '.implode('; ', $violations));
+    }
+
+    /**
+     * PHP files under a directory, relative to it, with forward slashes.
+     *
+     * @return list<string>
+     */
+    private static function phpFilesUnder(string $directory): array
+    {
+        if (! is_dir($directory)) {
+            return [];
+        }
+
+        $files = [];
+
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS)) as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $files[] = str_replace('\\', '/', substr($file->getPathname(), strlen($directory) + 1));
+            }
+        }
+
+        sort($files);
+
+        return $files;
+    }
+
+    /**
      * M1: a module imports another module only from its Contracts.
      *
      * Written as "uses no other module, except its Contracts", so it covers
