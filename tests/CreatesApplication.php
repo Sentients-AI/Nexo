@@ -11,6 +11,7 @@ use Illuminate\Testing\ParallelTesting;
 use Tests\Support\Database\GuardInput;
 use Tests\Support\Database\LockConnection;
 use Tests\Support\Database\TestDatabaseGuard;
+use Tests\Support\Redis\GuardedRedisManager;
 
 /**
  * The only way tests create the application.
@@ -64,16 +65,27 @@ trait CreatesApplication
 
         TestDatabaseGuard::enforce(GuardInput::fromApplication($app)->withAppEnv($loadedAs));
 
+        // Every Redis connection a test resolves, in any suite, proves its
+        // identity before it is handed out (ADR-0022 §5, R6).
+        GuardedRedisManager::install($app);
+
         // Under --parallel, Laravel's own set-up callback (registered while
         // the application booted, so it runs first) switches only the default
         // connection to nexo_testing_test_<N>. Follow it with the lock
-        // connection, then guard the switched configuration.
+        // connection and this worker's Redis prefix, nexo_testing:test_<N>:
+        // (ADR-0022 §4), then guard the switched configuration.
         $app->make(ParallelTesting::class)->setUpTestCase(static function () use ($app, $loadedAs): void {
             $config = $app->make('config');
             $database = $config->get('database.connections.'.$config->get('database.default').'.database');
 
             if (is_string($database)) {
                 LockConnection::pointAt($app, $database);
+            }
+
+            $token = $app->make(ParallelTesting::class)->token();
+
+            if (is_string($token) && $token !== '') {
+                GuardedRedisManager::pointAtWorker($app, $token);
             }
 
             TestDatabaseGuard::enforce(GuardInput::fromApplication($app)->withAppEnv($loadedAs));

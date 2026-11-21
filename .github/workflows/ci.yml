@@ -48,18 +48,54 @@ jobs:
       DB_USERNAME: nexo_test
       DB_PASSWORD: nexo_test
       NEXO_TEST_PRIVILEGES: '1'
+      # ADR-0022: the Redis suite is mandatory here. The tests connect as
+      # nexo_test (.github/valkey/users.acl); the CI-only password is
+      # disposable, like DB_PASSWORD.
+      NEXO_TEST_REDIS: '1'
+      REDIS_PASSWORD: nexo_test
+      # A second, throwaway Valkey that only tests/Redis/ProbeReconnectTest.php
+      # touches (.github/valkey/start-disposable.sh).
+      NEXO_TEST_DISPOSABLE_REDIS_PORT: '6391'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ADR-0022 §2: standalone Valkey 8.1, published on 127.0.0.1 only,
+      # ACL-restricted, no persistence. Started here rather than as a service
+      # container, because a service cannot mount the repository's config.
+      - name: Start Valkey
+        run: bash .github/valkey/start.sh
+
+      # The misconfigured server the R6 probe must survive: open default user,
+      # 127.0.0.1 only, no persistence, nothing on it but a marker. The
+      # reconnect test drops its own probe connection here, never on the
+      # test Valkey above.
+      - name: Start the disposable Valkey for the reconnect test
+        run: bash .github/valkey/start-disposable.sh
+
+      # ADR-0022 §7: a key outside nexo_testing:, written by the admin user
+      # before any test runs, and verified after all of them. A limited
+      # integrity check: it shows this one key was not changed or flushed,
+      # not that no other key was touched (the ACL is the real control).
+      - name: Seed the Valkey sentinel
+        id: sentinel
+        run: |
+          od -An -N16 -tx1 /dev/urandom | tr -d ' \n' > "$RUNNER_TEMP/valkey-sentinel"
+          test "$(.github/valkey/admin.sh SET nexo_ci:sentinel "$(cat "$RUNNER_TEMP/valkey-sentinel")")" = OK
+
+      # phpredis pinned to an exact release (ADR-0022 §3); predis is not used.
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: mbstring, pdo, pdo_mysql
+          extensions: mbstring, pdo, pdo_mysql, redis-6.3.0
           coverage: none
           tools: composer:v2
+
+      # Evidence: the pinned phpredis loads on this PHP 8.5.
+      - name: Show phpredis version
+        run: php --ri redis
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -77,6 +113,13 @@ jobs:
 
       - name: Validate Composer
         run: composer validate --strict
+
+      # ADR-0022 §10: composer.lock must not install predis/predis,
+      # adilazhari/laravel-trace or adilazhari/laravel-idempotency. Needs no
+      # vendor directory, so it runs before anything is installed.
+      # tests/Unit/CiWorkflowTest.php keeps this step.
+      - name: Check the package policy
+        run: php tests/bin/check-package-policy.php composer.lock
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
@@ -112,6 +155,38 @@ jobs:
       # (ADR-0009 §3, §3a).
       - name: Run platform and concurrency tests
         run: php artisan test --testsuite=Platform,Concurrency
+
+      # Redis contracts, ACL and fail-closed proofs, sequentially (ADR-0022).
+      # tests/Unit/CiWorkflowTest.php keeps this step and NEXO_TEST_REDIS.
+      - name: Run Redis tests
+        run: php artisan test --testsuite=Redis
+
+      # ADR-0022 §7: the unsafe-environment children, alone between two admin
+      # snapshots, so the server shows they sent no command (one failed AUTH
+      # for the wrong-password case is the only expected change).
+      - name: Prove the negative-control children send no Redis command
+        run: |
+          .github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/negative-before.txt"
+          php tests/Redis/bin/run-negative-controls.php
+          .github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/negative-after.txt"
+          php tests/Redis/bin/verify-negative-controls.php "$RUNNER_TEMP/negative-before.txt" "$RUNNER_TEMP/negative-after.txt"
+
+      # After every test stage, including when one of them failed.
+      - name: Verify the Valkey sentinel is unchanged
+        if: ${{ !cancelled() && steps.sentinel.outcome == 'success' }}
+        run: test "$(.github/valkey/admin.sh GET nexo_ci:sentinel)" = "$(cat "$RUNNER_TEMP/valkey-sentinel")"
+
+      # ADR-0022 §8: the live ACL must equal the rendered policy, and over the
+      # whole run no prohibited command executed, nothing ran outside the
+      # command inventory, and no inventory entry went unused. Collected as
+      # the admin user; the PHP check sees only the output, never a
+      # credential, and prints no ACL line.
+      - name: Verify the live Valkey ACL and command statistics
+        if: ${{ !cancelled() && steps.sentinel.outcome == 'success' }}
+        run: |
+          .github/valkey/admin.sh ACL LIST > "$RUNNER_TEMP/valkey-acl.txt"
+          .github/valkey/admin.sh INFO commandstats > "$RUNNER_TEMP/valkey-commandstats.txt"
+          php tests/Redis/bin/verify-valkey-policy.php "$RUNNER_TEMP/valkey-acl.txt" "$RUNNER_TEMP/valkey-commandstats.txt"
 
   frontend:
     name: Node 24 / Vue 3

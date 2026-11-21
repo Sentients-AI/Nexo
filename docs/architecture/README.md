@@ -46,5 +46,6 @@ The template is [`adr/ADR-TEMPLATE.md`](adr/ADR-TEMPLATE.md) (ADR-0006). Propose
 | [0019](adr/0019-search-behind-a-port.md) | Search port, MySQL first | Proposed (D-8) |
 | [0020](adr/0020-platform-administration-in-filament.md) | Filament for staff; Vue for vendors and customers | Accepted (owner, 2026-11-04) |
 | [0021](adr/0021-environments-demo-data-and-production-isolation.md) | Isolated environments; reproducible demo | Proposed |
+| [0022](adr/0022-redis-valkey-test-platform.md) | Redis contracts proven on an ACL-restricted Valkey in CI | Accepted (owner, 2026-11-17; seven implementation interpretations on the status line, 2026-11-17 to 2026-11-20) |
 
 Engineering standards that do **not** shape a domain, data-isolation, money, runtime-dependency or deployment boundary live in [`../engineering/`](../engineering/), not in an ADR.

@@ -93,6 +93,135 @@ counts as CI, so it enforces the rules rather than relaxing them. Locally,
 with neither variable set, both cases still skip. `CiEnforcementTest` proves
 these rules by running the proofs in child processes with each environment.
 
+### Redis tests — `tests/Redis/`
+
+Redis contracts on a standalone, ACL-restricted Valkey 8.1 (ADR-0022). They
+run only with `NEXO_TEST_REDIS=1` and the phpredis extension. Locally, a
+missing condition skips each test with the reason; in CI it fails the run.
+Sequential, never `--parallel`.
+
+- **Identity and namespace.** The tests connect as `nexo_test`, with its
+  disposable CI password, the prefix `nexo_testing:` and no database set:
+  Laravel would `SELECT` any configured database, even 0, and the ACL denies
+  `SELECT`. The test database guard rejects anything else before a connection
+  is opened (R1 host, R2 URL/TLS/cluster, R3 username and a non-empty
+  password, R4 prefix, R5 database). The password matters: with none, Laravel
+  skips `AUTH` and the connection runs as the server's `default` user,
+  whatever username is configured.
+- **Identity at connection (R6), in every suite.** Every test application
+  resolves Redis through `GuardedRedisManager`. Each connection, once `AUTH`
+  has been sent, runs `ACL WHOAMI` and is refused unless the server answers
+  `nexo_test`. This covers Unit and Feature tests that use Redis without
+  `RedisGate`.
+- **Live check (R6), Redis suite.** Before the first test in a process,
+  `RedisGate` asks whether `CONFIG GET`, `KEYS`, `FLUSHDB` and `FLUSHALL` are
+  permitted, without running them: they are queued inside `MULTI` and the
+  transaction is always discarded (`NonExecutingProbe`). The probe uses a
+  connection of its own, switches phpredis's transparent reconnect off
+  (`OPT_MAX_RETRIES` 0, checked before `MULTI`; phpredis defaults to 10 and
+  Laravel configures 3), stops and closes the connection at the first
+  unexpected error, and closes it afterwards in every case. Without that, a
+  connection dropped after `MULTI` would reconnect and run the next probed
+  command for real; `ProbeReconnectTest` reproduces exactly that on a
+  disposable Valkey (`.github/valkey/start-disposable.sh`, port 6391, never the
+  test Valkey) and proves the probe now runs nothing. Each probe connection
+  sends only `AUTH`, `ACL WHOAMI`, `MULTI`, the queued commands and `DISCARD`.
+  If anything is permitted, every test in that process fails and opens no
+  further connection. The probe never sends `EXEC`.
+- **Transactions.** `EXEC` is granted, because `Cache::putMany()` needs it.
+  The ACL checks each command as it is queued, so a transaction that queues a
+  refused command or key aborts as a whole and none of its writes run
+  (`TransactionContractTest`).
+- **Never in parallel.** The suite uses fixed marker keys and server-wide
+  checks, so a parallel worker skips it locally and fails it in CI. Other
+  suites may run in parallel: each worker gets its own Redis prefix,
+  `nexo_testing:test_<N>:`, beside its own MySQL database, and the guard
+  rejects any other worker's prefix. Harness workers (`Concurrently`) are
+  handed their parent's Redis and cache prefixes, as they are its database
+  (`HarnessPrefixTest`).
+- **No flush.** `FLUSHDB`, `FLUSHALL`, `KEYS` and `SCAN` are denied, so
+  `Cache::flush()` on the Redis store cannot be used. Record each key you
+  create with `RedisKeys::track()`; it is deleted with `UNLINK` after the test.
+- **Command inventory.** `tests/Redis/command-inventory.php` lists every
+  command the test identity may run, with a reason. `.github/valkey/users.acl`
+  is rendered from it (`Tests\Support\Redis\UsersAcl::render()`), and
+  `tests/Unit/UsersAclTest.php` fails if they differ. A test that needs a new
+  command adds it there and re-renders the file. Commands Laravel runs inside
+  Lua are listed too: the ACL checks each one. `COPY` and the database
+  switches are prohibited, not just absent.
+- **Contracts.** `CacheContractTest`, `LockContractTest`,
+  `RateLimiterContractTest` and `QueueContractTest` prove Laravel's Redis
+  behaviour. Cross-process cases run in harness workers
+  (`Tests\Concurrency\Scenarios\RedisContract`), each its own process with its
+  own connection, and the queue worker processes only its test's queue.
+  Expiry is asserted on the server's TTLs and waited for with bounded polling
+  (`Eventually`), never with a fixed sleep. Laravel's `RateLimiter` is not a
+  strict limiter under concurrency; which limiter to use is explained in
+  [Rate limiting](rate-limiting.md).
+- **Lua.** `LuaIsolationTest` proves a script cannot reach a key outside the
+  namespace (built in the script, passed as `ARGV`, which phpredis does not
+  prefix, or declared) or run a prohibited command.
+- **Live policy check (CI).** After every test stage, CI reads `ACL LIST` and
+  `INFO commandstats` as the admin user, and
+  `tests/Redis/bin/verify-valkey-policy.php` fails unless the live ACL equals
+  the rendered policy, no prohibited command ever executed, nothing ran
+  outside the inventory, and every inventory entry was used. Statistics show
+  which commands ran, not on which keys; namespace isolation rests on the ACL
+  and the isolation tests.
+- **Fail-closed proofs.** `GuardFailsClosedTest` runs
+  `tests/Probes/RedisProbeTest.php` in child processes with a wrong host, URL,
+  username, prefix, database or password, and checks that each one fails with
+  its rule and writes nothing. `UngatedResolutionTest` does the same for an
+  ordinary test outside `tests/Redis`.
+- **Sentinel.** CI seeds `nexo_ci:sentinel`, outside the test namespace, as
+  the admin user right after Valkey starts, and verifies it after every test
+  stage. It is a limited integrity check: it shows that this one key was not
+  changed or flushed, not that no other key was touched. The ACL is the
+  control. The admin password exists only inside the Valkey container.
+
+Running them locally needs Docker and a PHP 8.5 with phpredis. There is none
+for Windows yet, so use a Linux container:
+
+```sh
+bash .github/valkey/start.sh             # loopback-only Valkey with the CI ACL
+bash .github/valkey/start-disposable.sh  # throwaway server for the reconnect test
+NEXO_TEST_REDIS=1 NEXO_TEST_DISPOSABLE_REDIS_PORT=6391 php artisan test --testsuite=Redis
+docker rm -f nexo-valkey nexo-valkey-disposable
+```
+
+### Package policy
+
+`composer.lock` must not install these packages (ADR-0022 §10):
+
+| Package | Why it is not adopted |
+|---|---|
+| `predis/predis` | The Redis client is phpredis (ADR-0022 §3). Switching clients is a new decision, not a dependency change. |
+| `adilazhari/laravel-trace` | First-party package adoption is deferred (ADR-0010 was accepted without it; ADR-0022 §10). |
+| `adilazhari/laravel-idempotency` | As above. |
+
+`Tests\Support\Composer\PackagePolicy` reads the lockfile, so transitive
+dependencies count: every installed package has its own record there. Names
+match exactly, ignoring case; a package that only mentions one of these in
+its `require-dev` or `suggest` (as `laravel/framework` does for predis) is
+not installing it. A missing or malformed lockfile fails the check.
+
+An installed package that `replace`s or `provide`s one of these also fails:
+Composer would treat it as a stand-in for the prohibited package. This is a
+conservative substitution rule. It rejects the declaration, not proven
+identical code, and it cannot detect a package that bundles the same code
+without declaring anything.
+
+CI runs it before `composer install`, and `tests/Unit/PackagePolicyTest.php`
+also runs it on the repository's lockfile. To run it yourself:
+
+```sh
+php tests/bin/check-package-policy.php        # or pass a path to another composer.lock
+```
+
+Adding a package to the list, or removing one, needs an owner decision
+recorded in an ADR (ADR-0006). Adopting one of these packages is that
+decision, not a pull request that edits `PackagePolicy::PROHIBITED`.
+
 ## Naming
 
 Describe the behaviour, not the method under test.
@@ -223,4 +352,5 @@ composer test                        # clears config cache, then runs the suite
 # What CI runs:
 php artisan test --parallel --processes=4 --testsuite=Unit,Feature
 php artisan test --testsuite=Platform,Concurrency
+php artisan test --testsuite=Redis   # Valkey + NEXO_TEST_REDIS=1 (ADR-0022)
 ```
