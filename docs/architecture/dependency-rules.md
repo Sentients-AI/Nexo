@@ -1,6 +1,6 @@
 # Dependency Rules
 
-- **Status:** Normative (ADR-0010, accepted 2026-11-15 under M6-D-04). Each rule is either enforced by an architecture test in `tests/Arch/`, introduced by M1 Slice B, or deferred with a named trigger (§6). Until Slice B lands, only L6 and L7 are enforced (`tests/Unit/ArchTest.php`).
+- **Status:** Normative (ADR-0010, accepted 2026-11-15 under M6-D-04). Each rule is either enforced by an architecture test in `tests/Arch/`, introduced by M1 Slice B, or deferred with a named trigger (§6). Until Slice B lands, only L6 and L7 are enforced (`tests/Arch/LayerRulesTest.php`).
 - **Date:** 2026-11-01
 
 ## 1. Layer rules (inside every module)

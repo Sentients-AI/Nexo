@@ -29,11 +29,23 @@ database, the filesystem, the network, the clock (use injected/faked time), or
 the container. If a piece of logic needs any of those, either it belongs in a
 feature test or the dependency should be injected so it can be faked.
 
-### Architecture tests — `tests/Unit/ArchTest.php`
+### Architecture tests — `tests/Arch/`
 
-Pest's `arch()` assertions enforce structural rules (no debug helpers in
-committed code, `env()` only read from `config/`, security/php presets). Add to
-these when a new structural rule becomes worth enforcing automatically.
+The `Arch` suite enforces the dependency rules in
+`docs/architecture/dependency-rules.md` (ADR-0010 §7). CI runs it first, as its
+own step: `php artisan test --testsuite=Arch`.
+
+- Each rule is written once, in `Tests\Arch\Support\Rules`, against the
+  namespaces it checks. It runs against the application, where it must pass,
+  and against its deliberate-violation fixture in `tests/Arch/Fixtures/<rule>/`,
+  where it must fail (`Fixture::rejects()`).
+- Write rules as namespace-targeted expectations
+  (`expect($namespace)->not->toUse(...)`). The function-centred forms
+  (`expect('env')->toOnlyBeUsedIn(...)`) do not scan `Tests\`, so a fixture
+  could never prove them.
+- A rule over a namespace with no classes passes. The fixture proof is what
+  shows a rule detects anything; a fixture that fails to load fails its proof.
+- Pest's `php` and `security` presets run here too (`PresetsTest.php`).
 
 ### Concurrency tests — `tests/Concurrency/`
 

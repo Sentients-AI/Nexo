@@ -175,3 +175,15 @@ it('checks the live ACL and command statistics after every test stage', function
         }
     }
 });
+
+it('runs the architecture suite unconditionally, before the other test stages (ADR-0010 §7)', function (): void {
+    $steps = ciTestJobSteps();
+    $names = array_keys($steps);
+    $firstTest = min(array_keys(array_filter(array_values($steps), static fn (string $step): bool => str_contains($step, 'php artisan test'))));
+
+    expect($steps)->toHaveKey('Run architecture tests')
+        ->and($steps['Run architecture tests'])->toContain('run: php artisan test --testsuite=Arch')
+        ->and($steps['Run architecture tests'])->not->toContain('if:')
+        ->and($steps['Run architecture tests'])->not->toContain('continue-on-error')
+        ->and(array_search('Run architecture tests', $names, true))->toBe($firstTest);
+});

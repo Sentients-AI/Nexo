@@ -146,6 +146,11 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      # Dependency rules, a CI gate (ADR-0010 §7). First, so a boundary
+      # violation fails on its own step. tests/Unit/CiWorkflowTest.php keeps it.
+      - name: Run architecture tests
+        run: php artisan test --testsuite=Arch
+
       # Unit and feature tests in parallel: one database per process,
       # nexo_testing_test_<N>.
       - name: Run tests (parallel)

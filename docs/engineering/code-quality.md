@@ -41,7 +41,7 @@ composer analyse
 - **Analysed paths:** `app`, `bootstrap/app.php`, `config`, `database`,
   `routes`, `public/index.php`. Test files are not analysed by PHPStan — Pest's
   functional API is not statically resolvable without full Pest support; test
-  structure is covered by `tests/Unit/ArchTest.php` and Pint instead.
+  structure is covered by the architecture suite (`tests/Arch/`) and Pint instead.
 - **Do not weaken the baseline to get green.** No broad `ignoreErrors`, no
   baseline file, no `@phpstan-ignore` sprinkled to silence a real problem. Fix
   the cause. A genuinely unavoidable ignore carries a comment explaining why.

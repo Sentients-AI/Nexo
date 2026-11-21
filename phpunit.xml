@@ -11,6 +11,11 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <!-- Dependency rules (ADR-0010 §7), each proven by a fixture under
+             tests/Arch/Fixtures. No application, no database. -->
+        <testsuite name="Arch">
+            <directory>tests/Arch</directory>
+        </testsuite>
         <!-- Test-platform proofs: guard subprocesses, explicitly named probe
              databases. Run sequentially, never in parallel. -->
         <testsuite name="Platform">
