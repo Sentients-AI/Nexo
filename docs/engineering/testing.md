@@ -45,6 +45,12 @@ own step: `php artisan test --testsuite=Arch`.
   could never prove them.
 - A rule over a namespace with no classes passes. The fixture proof is what
   shows a rule detects anything; a fixture that fails to load fails its proof.
+- Pest matches a dependency only under a Composer PSR-4 root, by plain string
+  prefix. A rule on an uninstalled package (Stripe, Filament, Livewire) starts
+  to bite when the package is installed; prove such a rule with a stand-in under
+  `Tests\Arch\Fixtures\Stubs`, never by registering a fake vendor namespace.
+  Facade aliases (`\DB`) are invisible. Give fixture roots names that are not
+  prefixes of each other (`L5\Modules`, not `L5`, next to `L5Allowed`).
 - `Tests\Arch\Support\Registry` holds the modules, sub-namespaces, dependency
   matrix and deferred rules. `DriftTest` keeps it equal to
   `dependency-rules.md` and `domain-context-map.md`: change a document and the

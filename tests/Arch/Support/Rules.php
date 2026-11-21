@@ -19,6 +19,9 @@ final class Rules
     /** @var list<string> */
     public const DEBUG_HELPERS = ['dd', 'dump', 'ray', 'var_dump', 'print_r'];
 
+    /** The provider SDK of L5 (ADR-0015). */
+    public const PROVIDER_SDK = 'Stripe';
+
     /**
      * L6: env() is read only in config/.
      *
@@ -40,6 +43,57 @@ final class Rules
     {
         foreach ($namespaces as $namespace) {
             expect($namespace)->not->toUse(self::DEBUG_HELPERS);
+        }
+    }
+
+    /** L1: the domain layer uses no HTTP, UI, admin or provider code. */
+    public static function domainIsFrameworkFree(string $modules): void
+    {
+        foreach (Registry::MODULES as $module) {
+            expect("{$modules}\\{$module}\\Domain")->not->toUse([
+                'Illuminate\Http', 'Illuminate\Support\Facades\Request', 'Inertia', 'Filament', 'Livewire', 'Stripe',
+            ]);
+        }
+    }
+
+    /**
+     * L2: a use case depends on neither of its module's delivery layers (Http,
+     * Filament) nor on Inertia or Filament.
+     */
+    public static function applicationIgnoresDelivery(string $modules): void
+    {
+        foreach (Registry::MODULES as $module) {
+            expect("{$modules}\\{$module}\\Application")->not->toUse([
+                "{$modules}\\{$module}\\Http", "{$modules}\\{$module}\\Filament", 'Inertia', 'Filament',
+            ]);
+        }
+    }
+
+    /**
+     * L3, the part an arch test can see: controllers do not use the DB facade.
+     * The global DB alias has no autoload root, so Pest cannot see it; it falls
+     * to the deferred method-call part (a PHPStan rule, dependency-rules.md §6).
+     */
+    public static function controllersAvoidTheDatabase(string $modules): void
+    {
+        foreach (Registry::MODULES as $module) {
+            expect("{$modules}\\{$module}\\Http\\Controllers")->not->toUse('Illuminate\Support\Facades\DB');
+        }
+    }
+
+    /**
+     * L5: provider SDKs are used only in Payments\Infrastructure.
+     *
+     * Pest matches a dependency only under a Composer PSR-4 root, so the rule
+     * detects Stripe once the SDK is installed, before any code can use it. The
+     * fixture proves the rule with a stand-in SDK that is autoloadable now.
+     *
+     * @param  list<string>  $namespaces
+     */
+    public static function providerSdkOnlyInPayments(array $namespaces, string $modules, string $sdk = self::PROVIDER_SDK): void
+    {
+        foreach ($namespaces as $namespace) {
+            expect($namespace)->not->toUse($sdk)->ignoring("{$modules}\\Payments\\Infrastructure");
         }
     }
 
