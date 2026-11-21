@@ -12,35 +12,42 @@ use Tests\Support\Redis\ProbeClient;
  * ADR-0022 §5, R6: the probe must not execute anything even if its connection
  * drops after MULTI. phpredis reconnects transparently (OPT_MAX_RETRIES,
  * default 10; Laravel configures 3) and does not know a raw MULTI is open, so
- * after a drop the next probed command would run for real.
+ * after a drop the next command would run for real, outside any transaction.
  *
  * This runs against a disposable Valkey whose default user may do anything
  * (.github/valkey/start-disposable.sh): the misconfigured server R6 exists to
  * catch. Its connection is dropped from the server side with CLIENT KILL, a
  * real disconnect seen by the real phpredis client. The shared test Valkey is
- * never interrupted. Every case first proves the target is the disposable
- * server (its marker key, its own port, almost empty), and refuses otherwise.
+ * never interrupted.
+ *
+ * No destructive command is sent here. The commands that would run after a
+ * drop are SETs of a key this test owns, so whether they ran is visible and
+ * harmless. Every case first proves the target is the server this run
+ * started: the per-run marker, its own port, and nothing but the marker in
+ * its keyspace. It refuses otherwise.
  */
 
-const DISPOSABLE_MARKER = 'nexo-disposable-valkey';
+const PROOF_KEY = 'nexo_disposable:reconnect-proof';
 
 function disposablePort(): int
 {
     $port = getenv('NEXO_TEST_DISPOSABLE_REDIS_PORT');
+    $marker = getenv('NEXO_TEST_DISPOSABLE_REDIS_MARKER');
 
-    if (! is_string($port) || preg_match('/^[1-9][0-9]{1,4}$/', $port) !== 1) {
+    if (! is_string($port) || preg_match('/^[1-9][0-9]{1,4}$/', $port) !== 1 || ! is_string($marker) || $marker === '') {
         if (ContinuousIntegration::detected()) {
-            Assert::fail('ADR-0022 requires the reconnect test in CI, but NEXO_TEST_DISPOSABLE_REDIS_PORT is not set.');
+            Assert::fail('ADR-0022 requires the reconnect test in CI, but NEXO_TEST_DISPOSABLE_REDIS_PORT or _MARKER is not set.');
         }
 
-        Assert::markTestSkipped('No disposable Valkey (NEXO_TEST_DISPOSABLE_REDIS_PORT); see .github/valkey/start-disposable.sh.');
+        Assert::markTestSkipped('No disposable Valkey (NEXO_TEST_DISPOSABLE_REDIS_PORT, _MARKER); see .github/valkey/start-disposable.sh.');
     }
 
     return (int) $port;
 }
 
 /**
- * A client on the disposable server, after proving that is what it is.
+ * A client on the disposable server, after proving it is the one this run
+ * started. Only reads are sent until the proof holds.
  */
 function disposableClient(): PhpRedis
 {
@@ -53,8 +60,19 @@ function disposableClient(): PhpRedis
     $client = new PhpRedis;
     $client->connect('127.0.0.1', $port, 2.0);
 
-    if ($client->rawCommand('GET', 'nexo_disposable:marker') !== DISPOSABLE_MARKER || (int) $client->rawCommand('DBSIZE') > 2) {
-        Assert::fail('127.0.0.1:'.$port.' is not the disposable Valkey (marker missing or keys present); refusing.');
+    $keyspace = array_values(array_filter(
+        explode("\n", str_replace("\r", '', (string) $client->rawCommand('INFO', 'keyspace'))),
+        static fn (string $line): bool => str_starts_with($line, 'db'),
+    ));
+
+    $isOurs = $client->rawCommand('GET', 'nexo_disposable:marker') === getenv('NEXO_TEST_DISPOSABLE_REDIS_MARKER')
+        && count($keyspace) === 1
+        && preg_match('/^db0:keys=(1|2),/', $keyspace[0]) === 1;
+
+    if (! $isOurs) {
+        $client->close();
+        Assert::fail('127.0.0.1:'.$port.' is not the disposable Valkey this run started (marker, or keyspace '
+            .json_encode($keyspace).'); refusing.');
     }
 
     return $client;
@@ -117,67 +135,93 @@ final class DroppedAfterMulti implements ProbeClient
     }
 }
 
+function clientWithRetries(int $retries): PhpRedis
+{
+    $client = new PhpRedis;
+    $client->connect('127.0.0.1', disposablePort(), 2.0);
+    $client->setOption(PhpRedis::OPT_MAX_RETRIES, $retries);
+
+    return $client;
+}
+
+/** The destructive commands that must never execute on the disposable server. */
+const NEVER_EXECUTED = ['flushall', 'flushdb', 'swapdb', 'keys', 'config|get', 'config|set', 'shutdown', 'exec'];
+
 beforeEach(function (): void {
     $this->admin = disposableClient();
-    $this->admin->rawCommand('SET', 'canary', 'alive');
+    $this->token = bin2hex(random_bytes(8));
+    // Only this test's own keys; a failed earlier run may have left them.
+    $this->admin->rawCommand('UNLINK', PROOF_KEY, PROOF_KEY.':second');
     $this->admin->rawCommand('CONFIG', 'RESETSTAT');
 });
 
 afterEach(function (): void {
     if (isset($this->admin)) {
-        $this->admin->rawCommand('SET', 'nexo_disposable:marker', DISPOSABLE_MARKER);
-        $this->admin->rawCommand('UNLINK', 'canary');
+        $this->admin->rawCommand('UNLINK', PROOF_KEY, PROOF_KEY.':second');
+        $this->admin->close();
     }
 });
 
-it('control: with reconnect left on, a dropped connection runs the next command outside the transaction', function (): void {
-    // What the probe did before this fix, step by step: the test must be able
-    // to see the failure it guards against.
-    $client = new PhpRedis;
-    $client->connect('127.0.0.1', disposablePort(), 2.0);
-    $client->setOption(PhpRedis::OPT_MAX_RETRIES, 3);
-    $dropping = new DroppedAfterMulti($client, $this->admin);
+it('control: with reconnect on, a SET sent after a dropped MULTI runs outside the transaction', function (): void {
+    // The defect, shown with a harmless command: had the transaction held,
+    // the SET would only have been queued and lost with the connection.
+    $client = clientWithRetries(3);
 
-    expect($dropping->rawCommand('MULTI'))->toBeTrue()
-        ->and($client->rawCommand('FLUSHALL'))->toBeTrue();
+    expect((new DroppedAfterMulti($client, $this->admin))->rawCommand('MULTI'))->toBeTrue()
+        ->and($client->rawCommand('SET', PROOF_KEY, $this->token))->toBeTrue();
 
-    expect(disposableCalls($this->admin)['flushall'] ?? 0)->toBe(1)
-        ->and($this->admin->rawCommand('GET', 'canary'))->toBeFalse();
+    expect($this->admin->rawCommand('GET', PROOF_KEY))->toBe($this->token)
+        ->and(disposableCalls($this->admin)['set'] ?? 0)->toBe(1)
+        ->and(array_intersect_key(disposableCalls($this->admin), array_flip(NEVER_EXECUTED)))->toBe([]);
+
+    $client->close();
+});
+
+it('control: with reconnect off, the same SET fails and does not run', function (): void {
+    $client = clientWithRetries(0);
+
+    expect((new DroppedAfterMulti($client, $this->admin))->rawCommand('MULTI'))->toBeTrue()
+        ->and(fn () => $client->rawCommand('SET', PROOF_KEY, $this->token))->toThrow(RedisException::class, 'Connection lost');
+
+    expect($this->admin->rawCommand('GET', PROOF_KEY))->toBeFalse()
+        ->and(disposableCalls($this->admin)['set'] ?? 0)->toBe(0);
 
     $client->close();
 });
 
 it('never runs a probed command when its connection drops after MULTI', function (): void {
-    $client = new PhpRedis;
-    $client->connect('127.0.0.1', disposablePort(), 2.0);
-    // As Laravel configures it; the probe must switch it off itself.
-    $client->setOption(PhpRedis::OPT_MAX_RETRIES, 3);
+    // As Laravel configures it; the probe must switch reconnect off itself.
+    $client = clientWithRetries(3);
 
-    $violations = NonExecutingProbe::violationsOn(new DroppedAfterMulti($client, $this->admin));
+    $violations = NonExecutingProbe::violationsOn(
+        new DroppedAfterMulti($client, $this->admin),
+        [['SET', PROOF_KEY, $this->token], ['SET', PROOF_KEY.':second', $this->token]],
+    );
     $calls = disposableCalls($this->admin);
 
-    expect($violations)->toHaveCount(1)
-        ->and($violations[0])->toStartWith('CONFIG GET maxmemory was not refused by the ACL (')
-        ->and($violations[0])->toEndWith('the probe stopped and closed the connection')
-        // Nothing probed ever executed, and nothing was sent after the drop.
-        ->and(array_intersect_key($calls, array_flip(['flushall', 'flushdb', 'keys', 'config|get', 'exec', 'discard'])))->toBe([])
-        ->and($this->admin->rawCommand('GET', 'canary'))->toBe('alive')
+    expect($violations)->toBe(['SET '.PROOF_KEY.' '.$this->token.' was not refused by the ACL (Connection lost); the probe stopped and closed the connection'])
+        // Nothing probed ran: the SET did not reconnect, and nothing followed it.
+        ->and($this->admin->rawCommand('GET', PROOF_KEY))->toBeFalse()
+        ->and($this->admin->rawCommand('GET', PROOF_KEY.':second'))->toBeFalse()
+        ->and($calls['set'] ?? 0)->toBe(0)
+        ->and($calls['discard'] ?? 0)->toBe(0)
+        ->and(array_intersect_key($calls, array_flip(NEVER_EXECUTED)))->toBe([])
         // Failed closed: reconnect off, client closed, never handed back.
         ->and($client->getOption(PhpRedis::OPT_MAX_RETRIES))->toBe(0)
         ->and($client->isConnected())->toBeFalse();
 });
 
-it('positive control: on the same server, with no drop, the probe reports everything permitted and runs nothing', function (): void {
-    $client = new PhpRedis;
-    $client->connect('127.0.0.1', disposablePort(), 2.0);
+it('positive control: with no drop, the probe queues and discards its commands without running them', function (): void {
+    $client = clientWithRetries(3);
 
-    $violations = NonExecutingProbe::violationsOn($client);
+    $violations = NonExecutingProbe::violationsOn($client, [['SET', PROOF_KEY, $this->token]]);
     $calls = disposableCalls($this->admin);
 
-    expect($violations)->toHaveCount(4)
-        ->and($violations[3])->toStartWith('FLUSHALL is permitted (queued, then discarded unexecuted')
+    expect($violations)->toBe(['SET '.PROOF_KEY.' '.$this->token.' is permitted (queued, then discarded unexecuted; reply true)'])
+        ->and($this->admin->rawCommand('GET', PROOF_KEY))->toBeFalse()
         ->and($calls['multi'] ?? 0)->toBe(1)
         ->and($calls['discard'] ?? 0)->toBe(1)
-        ->and(array_intersect_key($calls, array_flip(['flushall', 'flushdb', 'keys', 'config|get', 'exec'])))->toBe([])
-        ->and($this->admin->rawCommand('GET', 'canary'))->toBe('alive');
+        ->and($calls['set'] ?? 0)->toBe(0)
+        ->and(array_intersect_key($calls, array_flip(NEVER_EXECUTED)))->toBe([])
+        ->and($client->isConnected())->toBeFalse();
 });

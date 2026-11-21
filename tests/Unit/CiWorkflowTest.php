@@ -76,6 +76,16 @@ it('starts the disposable Valkey for the reconnect test before any test stage, o
         ->and((string) file_get_contents(dirname(__DIR__, 2).'/.github/valkey/start.sh'))->toContain('-p 127.0.0.1:6379:6379');
 });
 
+it('gives the disposable Valkey an unpredictable per-run marker, handed to the tests through GITHUB_ENV', function (): void {
+    $script = (string) file_get_contents(dirname(__DIR__, 2).'/.github/valkey/start-disposable.sh');
+
+    expect($script)->toContain('MARKER="nexo-disposable-$(od -An -N16 -tx1 /dev/urandom')
+        ->and($script)->toContain('echo "NEXO_TEST_DISPOSABLE_REDIS_MARKER=$MARKER" >> "$GITHUB_ENV"')
+        // Refuses a server that already holds data before the marker is set.
+        ->and($script)->toContain("cli INFO keyspace | grep '^db'")
+        ->and($script)->toContain('set -euo pipefail');
+});
+
 it('runs the Redis suite sequentially, unconditionally and without continue-on-error', function (): void {
     $steps = ciTestJobSteps();
 
