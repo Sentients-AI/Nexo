@@ -22,6 +22,10 @@ final readonly class GuardInput
      * @param  bool  $parallel  Running under Laravel's parallel runner.
      * @param  string|null  $parallelToken  This worker's TEST_TOKEN; null in the
      *                                      runner's parent process and when not parallel.
+     * @param  array<string, array<string, mixed>>|null  $redis  Effective Redis
+     *                                                           connection configurations by name (ADR-0022 §5), or null before the
+     *                                                           configuration is loaded (R1-R5 are then not evaluated).
+     * @param  bool  $redisClustersConfigured  `database.redis.clusters` is not empty (R2).
      */
     public function __construct(
         public bool $configCached,
@@ -31,6 +35,8 @@ final readonly class GuardInput
         public ?array $connections = null,
         public bool $parallel = false,
         public ?string $parallelToken = null,
+        public ?array $redis = null,
+        public bool $redisClustersConfigured = false,
     ) {}
 
     /**
@@ -74,6 +80,8 @@ final readonly class GuardInput
             connections: self::connectionsUsedByTests($config, $default, $all),
             parallel: self::parallel(),
             parallelToken: self::parallelToken(),
+            redis: self::effectiveRedisConnections($config),
+            redisClustersConfigured: ! in_array($config->get('database.redis.clusters'), [null, []], true),
         );
     }
 
@@ -87,7 +95,46 @@ final readonly class GuardInput
             $this->connections,
             $this->parallel,
             $this->parallelToken,
+            $this->redis,
+            $this->redisClustersConfigured,
         );
+    }
+
+    /**
+     * Every configured Redis connection, merged the way Laravel's
+     * PhpRedisConnector merges it before connecting: the connection, then the
+     * global `options`, then the connection's own `options` and `prefix`.
+     * Checked generically, so a connection added later is guarded too.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function effectiveRedisConnections(Repository $config): array
+    {
+        $redis = (array) $config->get('database.redis', []);
+        $global = (array) ($redis['options'] ?? []);
+        unset($global['parameters']);
+
+        $connections = [];
+
+        foreach ($redis as $name => $connection) {
+            if (in_array($name, ['client', 'options', 'clusters'], true)) {
+                continue;
+            }
+
+            $connection = is_array($connection) ? $connection : [];
+            $own = (array) ($connection['options'] ?? []);
+            unset($connection['options']);
+
+            if (isset($connection['prefix'])) {
+                $own['prefix'] = $connection['prefix'];
+            }
+
+            /** @var array<string, mixed> $effective */
+            $effective = array_merge($connection, $global, $own);
+            $connections[(string) $name] = $effective;
+        }
+
+        return $connections;
     }
 
     /**

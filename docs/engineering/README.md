@@ -13,6 +13,7 @@ How the team builds and maintains Nexo. Product requirements live in
 | [`error-handling.md`](error-handling.md) | Exception and logging conventions |
 | [`git-workflow.md`](git-workflow.md) | Branching, PRs, commits, merge policy |
 | [`issue-workflow.md`](issue-workflow.md) | Epic → Story → Task → PR; issue types |
+| [`rate-limiting.md`](rate-limiting.md) | Strict versus non-strict rate limiting in Laravel |
 | [`security.md`](security.md) | Engineering security baseline |
 | [`testing.md`](testing.md) | Pest conventions: unit vs feature, naming, fakes |
 
