@@ -8,6 +8,39 @@ without a lock; prove it with a concurrency test (`docs/engineering/testing.md`)
 
 Tests run against `nexo_testing`, never the development database `nexo`.
 
+## Collation in an existing development database
+
+`.env.example` sets `DB_COLLATION=utf8mb4_0900_ai_ci`. Without that line,
+`config/database.php` falls back to `utf8mb4_unicode_ci`, and development
+databases created before it was added usually hold `unicode_ci` tables.
+
+Adopting the setting changes only new connections and new tables. Existing
+tables keep their collation, so a database can end up mixing both. Comparing or
+joining string columns across the two then fails with *Illegal mix of
+collations*. To check what a database holds:
+
+```sql
+SELECT table_collation, COUNT(*) FROM information_schema.tables
+WHERE table_schema = 'nexo' GROUP BY table_collation;
+```
+
+To get to one collation, from least to most destructive:
+
+1. **Use a fresh database** under a new name, created with
+   `CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci`, point `DB_DATABASE` at
+   it and migrate. The old database stays untouched.
+2. **Convert in place** with
+   `ALTER TABLE … CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci`.
+   Back the database up first (`mysqldump`), because this rewrites every table.
+3. **Reset** with `php artisan migrate:fresh` only if the database is
+   disposable. It drops every table. Run it on a database with data you want to
+   keep only after a verified backup and the data owner's agreement.
+
+Test databases (`nexo_testing`, `nexo_testing_test_<N>`) are disposable: the
+test run rebuilds their tables with the collation phpunit.xml sets, and
+`ServerBaselineTest` fails if a test database itself defaults to another
+collation.
+
 The marketplace schema is **not** designed yet. This document sets the rules
 future migrations follow; it does not change existing tables.
 
