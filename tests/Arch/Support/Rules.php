@@ -162,8 +162,21 @@ final class Rules
      */
     public static function moduleTreeIsCanonical(string $modulesDirectory): void
     {
+        $violations = self::moduleTreeViolations($modulesDirectory);
+
+        expect($violations)->toBe([], 'App\Modules breaks C3: '.implode('; ', $violations));
+    }
+
+    /**
+     * No App\Modules directory, before the first module class, is a
+     * canonical tree.
+     *
+     * @return list<string>
+     */
+    private static function moduleTreeViolations(string $modulesDirectory): array
+    {
         if (! is_dir($modulesDirectory)) {
-            return;
+            return [];
         }
 
         $violations = [];
@@ -196,7 +209,7 @@ final class Rules
             }
         }
 
-        expect($violations)->toBe([], 'App\Modules breaks C3: '.implode('; ', $violations));
+        return $violations;
     }
 
     /**
