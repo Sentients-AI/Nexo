@@ -44,6 +44,40 @@ final class Rules
     }
 
     /**
+     * M1: a module imports another module only from its Contracts.
+     *
+     * Written as "uses no other module, except its Contracts", so it covers
+     * every namespace of the other module, not only the listed sub-namespaces.
+     */
+    public static function modulesImportOnlyContracts(string $modules): void
+    {
+        foreach (Registry::MODULES as $module) {
+            $others = array_values(array_diff(Registry::MODULES, [$module]));
+
+            expect("{$modules}\\{$module}")
+                ->not->toUse(array_map(fn (string $other): string => "{$modules}\\{$other}", $others))
+                ->ignoring(array_map(fn (string $other): string => "{$modules}\\{$other}\\Contracts", $others));
+        }
+    }
+
+    /** M2: the shared kernel imports no module. */
+    public static function sharedImportsNoModule(string $shared, string $modules): void
+    {
+        expect($shared)->not->toUse($modules);
+    }
+
+    /** M4: a module calls only the Contracts the dependency matrix allows. */
+    public static function onlyAllowedDependencies(string $modules): void
+    {
+        foreach (Registry::DEPENDENCIES as $module => $allowed) {
+            $forbidden = array_values(array_diff(Registry::MODULES, [$module], $allowed));
+
+            expect("{$modules}\\{$module}")
+                ->not->toUse(array_map(fn (string $callee): string => "{$modules}\\{$callee}\\Contracts", $forbidden));
+        }
+    }
+
+    /**
      * M5: the synchronous dependency graph has no cycle. M4 holds the code to
      * the registry's edges, so an acyclic registry means acyclic code.
      *
