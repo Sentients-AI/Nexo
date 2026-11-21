@@ -1,6 +1,6 @@
 # Dependency Rules
 
-- **Status:** Normative (ADR-0010, accepted 2026-11-15 under M6-D-04). Each rule is either enforced by an architecture test in `tests/Arch/`, introduced by M1 Slice B, or deferred with a named trigger (§6). Until Slice B lands, only L6 and L7 are enforced (`tests/Arch/LayerRulesTest.php`).
+- **Status:** Normative (ADR-0010, accepted 2026-11-15 under M6-D-04). Each rule is either enforced by an architecture test in `tests/Arch/` (M1 Slice B, delivered as M6.1, #23), proven by a deliberate-violation fixture, or deferred with a named trigger (§6). How the tests read the rules: L2's `Http` and `Filament` are the module's own delivery layers as well as the Inertia and Filament packages; L3's tested part is `Illuminate\Support\Facades\DB` in `<Module>\Http\Controllers`, and the global `DB` alias falls to its deferred method-call part; a rule on a package that is not installed yet (Stripe, Filament, Livewire) takes effect when Composer installs it.
 - **Date:** 2026-11-01
 
 ## 1. Layer rules (inside every module)

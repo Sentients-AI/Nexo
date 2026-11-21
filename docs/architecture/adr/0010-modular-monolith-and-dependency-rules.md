@@ -1,7 +1,7 @@
 # ADR-0010: Structure the application as a modular monolith with enforced module contracts
 
 - **Number:** 0010
-- **Status:** Accepted, by owner decision M6-D-04 (2026-11-15), as amended. The package-adoption text proposed with M6-D-04 is not included: MySQL first, and first-party packages are deferred.
+- **Status:** Accepted, by owner decision M6-D-04 (2026-11-15), as amended. The package-adoption text proposed with M6-D-04 is not included: MySQL first, and first-party packages are deferred. Implementation interpretations accepted by the owner, not changes to the decision: (1, 2026-11-21) §4's "bound in its service provider" means a provider in the module's own `Infrastructure/`, registered from `bootstrap/providers.php`; so under §2a the composition root imports a module's `Contracts`, `Http`, `Filament` and `Infrastructure`, never its `Domain` or `Application`; (2, 2026-11-21) §1's rule that a directory exists only once its first class does also binds M1 Slice B, which creates no module or `Shared` directory ahead of code. M1 Slice B was delivered as M6.1 (#23).
 - **Date:** 2026-11-01
 - **Decision owner:** Project owner
 
