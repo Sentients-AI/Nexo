@@ -45,6 +45,10 @@ own step: `php artisan test --testsuite=Arch`.
   could never prove them.
 - A rule over a namespace with no classes passes. The fixture proof is what
   shows a rule detects anything; a fixture that fails to load fails its proof.
+- `Tests\Arch\Support\Registry` holds the modules, sub-namespaces, dependency
+  matrix and deferred rules. `DriftTest` keeps it equal to
+  `dependency-rules.md` and `domain-context-map.md`: change a document and the
+  registry in the same commit.
 - Pest's `php` and `security` presets run here too (`PresetsTest.php`).
 
 ### Concurrency tests — `tests/Concurrency/`
