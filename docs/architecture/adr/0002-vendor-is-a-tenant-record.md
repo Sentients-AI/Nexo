@@ -1,6 +1,6 @@
 # ADR-0002: A "vendor" is the existing tenant record, reframed
 
-**Status:** Accepted
+**Status:** Superseded by ADR-0005 (owner, 2026-11-22)
 **Date:** 2026-08-30
 
 ---

@@ -21,6 +21,5 @@ is in the repository [`README.md`](../../README.md). Start there.
 ## Domain naming note
 
 Nexo 2.0 uses **Vendor** in code, schema and UI (`vendors`, `vendor_id`), per
-[ADR-0005](../architecture/adr/ADR-0005-vendor-naming.md) (recommended for acceptance in the
-Phase 1 review). ADR-0002's `tenant` naming applied to the legacy SaaS database and is proposed
-to be marked superseded.
+[ADR-0005](../architecture/adr/0005-vendor-naming.md) (accepted 2026-11-22). ADR-0002's
+`tenant` naming applied to the legacy SaaS database and is superseded by ADR-0005.

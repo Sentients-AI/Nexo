@@ -1,6 +1,6 @@
 # ADR-0003: Context-dependent vendor scoping (retire the blanket global scope)
 
-**Status:** Accepted
+**Status:** Accepted. Implementation interpretation accepted by the owner, not a change to the decision: (1, 2026-11-22) the `Tenant`, `TenantScope`, `BelongsToTenant` and `tenant_id` names here are historical (ADR-0005); Nexo v2 spells them `Vendor` and `vendor_id`. The decision stands unchanged: no global vendor or tenant scope is reintroduced, scoping stays explicit and context-driven, the owning `vendor_id` is set on create, and the vendor-scoping suite and architecture test remain the enforcement.
 **Date:** 2026-08-30
 
 ---
