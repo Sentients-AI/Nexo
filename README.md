@@ -105,8 +105,8 @@ composer setup     # install, .env, key:generate, migrate, npm install, npm buil
 
 ## Running the quality gate
 
-Run all of these before opening a pull request — together they are exactly what
-CI enforces. A pull request merges only when **both** CI jobs are green.
+Run all of these before integrating a change — together they are exactly what
+CI enforces. `main` accepts a commit only when **both** CI jobs passed on it.
 
 ```sh
 composer check          # validate, audit, Pint, PHPStan, Pest
@@ -171,9 +171,10 @@ Key engineering docs:
 
 ## Contributing
 
-Nexo uses an issue-driven, short-lived-branch, pull-request workflow. `main` is
-protected: PRs require a passing CI run and one approval, and are squash-merged.
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) and
+Nexo has one maintainer and a short-lived-branch workflow; pull requests are
+optional. `main` is protected with no bypass: it accepts only a fast-forward to
+a commit that passed both required CI checks, made with the owner's explicit
+authorisation. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and
 [`docs/engineering/git-workflow.md`](docs/engineering/git-workflow.md).
 
 ## Domain naming note
