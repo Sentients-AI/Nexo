@@ -2,8 +2,11 @@
 
 namespace App\Modules\Vendors\Domain;
 
+use Database\Factories\VendorFactory;
 use Illuminate\Database\Eloquent\Attributes\DateFormat;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -21,8 +24,12 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable(['slug', 'name'])]
 #[DateFormat('Y-m-d H:i:s.u')]
+#[UseFactory(VendorFactory::class)]
 class Vendor extends Model
 {
+    /** @use HasFactory<VendorFactory> */
+    use HasFactory;
+
     /**
      * A new Vendor is pending, matching the column default.
      *
