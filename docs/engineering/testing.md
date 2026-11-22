@@ -29,11 +29,33 @@ database, the filesystem, the network, the clock (use injected/faked time), or
 the container. If a piece of logic needs any of those, either it belongs in a
 feature test or the dependency should be injected so it can be faked.
 
-### Architecture tests — `tests/Unit/ArchTest.php`
+### Architecture tests — `tests/Arch/`
 
-Pest's `arch()` assertions enforce structural rules (no debug helpers in
-committed code, `env()` only read from `config/`, security/php presets). Add to
-these when a new structural rule becomes worth enforcing automatically.
+The `Arch` suite enforces the dependency rules in
+`docs/architecture/dependency-rules.md` (ADR-0010 §7). CI runs it first, as its
+own step: `php artisan test --testsuite=Arch`.
+
+- Each rule is written once, in `Tests\Arch\Support\Rules`, against the
+  namespaces it checks. It runs against the application, where it must pass,
+  and against its deliberate-violation fixture in `tests/Arch/Fixtures/<rule>/`,
+  where it must fail (`Fixture::rejects()`).
+- Write rules as namespace-targeted expectations
+  (`expect($namespace)->not->toUse(...)`). The function-centred forms
+  (`expect('env')->toOnlyBeUsedIn(...)`) do not scan `Tests\`, so a fixture
+  could never prove them.
+- A rule over a namespace with no classes passes. The fixture proof is what
+  shows a rule detects anything; a fixture that fails to load fails its proof.
+- Pest matches a dependency only under a Composer PSR-4 root, by plain string
+  prefix. A rule on an uninstalled package (Stripe, Filament, Livewire) starts
+  to bite when the package is installed; prove such a rule with a stand-in under
+  `Tests\Arch\Fixtures\Stubs`, never by registering a fake vendor namespace.
+  Facade aliases (`\DB`) are invisible. Give fixture roots names that are not
+  prefixes of each other (`L5\Modules`, not `L5`, next to `L5Allowed`).
+- `Tests\Arch\Support\Registry` holds the modules, sub-namespaces, dependency
+  matrix and deferred rules. `DriftTest` keeps it equal to
+  `dependency-rules.md` and `domain-context-map.md`: change a document and the
+  registry in the same commit.
+- Pest's `php` and `security` presets run here too (`PresetsTest.php`).
 
 ### Concurrency tests — `tests/Concurrency/`
 
