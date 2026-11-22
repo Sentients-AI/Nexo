@@ -16,7 +16,10 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A superseded run on a branch is cancelled; a run on main never is. A
+  # commit's latest run decides its required checks, so a cancelled main
+  # run would leave an integrated commit without its green record.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
