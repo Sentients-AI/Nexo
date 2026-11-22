@@ -47,7 +47,7 @@ future migrations follow; it does not change existing tables.
 ## Migrations
 
 - **Reversible where practical.** Write a real `down()` that undoes `up()`. If a
-  change genuinely cannot be reversed (data loss), say so in the PR and in a
+  change genuinely cannot be reversed (data loss), say so in the commit body and in a
   comment on the migration.
 - **One concern per migration.** Don't bundle an unrelated column add with a
   table rename.
@@ -94,7 +94,8 @@ Follow Laravel conventions:
 ## Destructive changes
 
 - Dropping or renaming a column/table, or changing a type in a lossy way,
-  requires explicit call-out in the PR description and reviewer sign-off.
+  requires explicit call-out in the commit body and the owner's explicit
+  approval before it is integrated.
 - Before a destructive migration, state what production data exists in that
   column and what happens to it. Back up / export first if the data has value.
 - A data backfill that touches many rows is chunked and safe to re-run

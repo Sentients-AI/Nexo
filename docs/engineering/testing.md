@@ -1,7 +1,7 @@
 # Testing
 
 Nexo uses [Pest](https://pestphp.com/) as its only test framework. Tests are a
-merge gate: `php artisan test` must pass before a pull request is merged.
+integration gate: `php artisan test` must pass before a change reaches `main`.
 
 ## Test types
 
@@ -242,7 +242,7 @@ php tests/bin/check-package-policy.php        # or pass a path to another compos
 
 Adding a package to the list, or removing one, needs an owner decision
 recorded in an ADR (ADR-0006). Adopting one of these packages is that
-decision, not a pull request that edits `PackagePolicy::PROHIBITED`.
+decision, not a commit that edits `PackagePolicy::PROHIBITED`.
 
 ## Naming
 

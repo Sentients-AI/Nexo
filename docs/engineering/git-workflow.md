@@ -1,34 +1,60 @@
 # Git Workflow
 
-Nexo uses a single long-lived branch (`main`) and short-lived feature branches.
-There is no `dev`/`develop`/`staging` branch.
+Nexo has one maintainer. It uses a single long-lived branch (`main`) and
+short-lived feature branches; there is no `dev`/`develop`/`staging` branch.
+Pull requests and independent review are optional. The repository ruleset
+enforces CI and history protection instead.
 
 ```
 main
   │
   ├── feature branch (short-lived, one focused change)
-  │     implementation → tests → Pint → PHPStan → commit
+  │     change → tests → validate → commit → push   (repeat per commit)
   │     │
-  │     └── Pull Request → CI → review → squash merge
+  │     └── CI green on the tip → owner authorises → fast-forward main
   │
 main (updated)
 ```
 
+## What the ruleset enforces on `main`
+
+The `Protect main` ruleset applies to everyone, administrators included: it
+has no bypass. GitHub rejects a push to `main` unless:
+
+- both required checks, `PHP 8.5 / Laravel 13` and `Node 24 / Vue 3`, passed on
+  the exact commit being pushed. A missing, running, failed or cancelled check
+  rejects the push;
+- the push is a fast-forward: force-pushes are blocked;
+- no merge commit is introduced: history is linear.
+
+Deleting `main` is blocked too. GitHub checks only the tip commit of a push, so
+the commits under it are validated locally (see Commits).
+
 ## Rules
 
-- **No direct commits to `main` for feature work.** `main` is updated only by
-  merging a reviewed pull request.
-- **No long-lived branches.** A feature branch lives days, not weeks. If work is
-  large, split it into several PRs that each land independently.
-- **Branch from `main`, PR into `main`.**
-- **CI must be green before merge.** Do not merge red. Do not bypass or disable
-  a check to merge.
-- **PRs require at least one approval**, of the most recent push.
-- **Conversations resolved before merge.**
-- **Squash merge.** One commit per PR on `main`; linear history.
-- **Never force-push `main`.** Force-pushing a feature branch you own is fine.
-- **`main` is never rewritten** and its history is protected by the repository
-  ruleset (linear history, force-push blocked, branch-deletion restricted).
+- **Feature branches by default.** Application changes are made on a feature
+  branch cut from the latest `main`. Keep it short-lived: days, not weeks.
+- **Push each commit as soon as it is validated.** CI runs on every push to
+  every branch. A newer push to the same branch cancels the superseded run;
+  runs on `main` always finish.
+- **Integrate only with the owner's explicit authorisation**, given for that
+  change. Integration fast-forwards `main` to the branch tip once its checks
+  are green:
+
+  ```sh
+  git fetch origin
+  git merge-base --is-ancestor origin/main <sha>   # must succeed: a fast-forward
+  git push origin <sha>:refs/heads/main
+  ```
+
+- **History is append-only.** Pushed commits are never amended, rebased or
+  force-pushed, on any branch. A fix is a new commit; undoing a change on
+  `main` is a `git revert` on a branch, integrated like any other change.
+- **Pull requests are optional.** Open one for a written record or a review
+  conversation. It is integrated the same way, by the fast-forward push; if
+  GitHub doesn't mark it merged, close it with a note naming the commits.
+  Leave the merge button alone: a squash or rebase merge creates commits CI
+  never tested.
 
 ## Branch names
 
@@ -40,19 +66,36 @@ Types match the issue types in [`issue-workflow.md`](issue-workflow.md):
 
 ## Commits
 
-- Present-tense, imperative subject that states intent:
-  `Freeze commission rate onto order at creation`, not `changes` or `wip`.
-- Body explains **why** when it isn't obvious from the diff.
-- Since PRs are squash-merged, the PR title/description becomes the permanent
-  record — make it good. Intermediate commits on the branch can be scrappy.
+Commits are atomic and land on `main` exactly as written, so each one is part
+of the permanent record.
 
-## Keeping a branch current
+- **One cohesive change per commit**: one behaviour, one fix with its regression
+  test, one infrastructure change, one documentation decision. There is no
+  file-count rule.
+- **Conventional Commits**: `type(scope): subject`, with type `feat`, `fix`,
+  `test`, `refactor`, `docs`, `ci` or `chore`. The subject is imperative and
+  states intent: `fix(ordering): freeze the commission rate at order creation`.
+- **The body explains why**, the invariant it protects, and how it was
+  validated, when the diff doesn't show it.
+- **Validate before committing**: the change's tests, Pint, PHPStan and
+  `git diff --check`. Run the full gate in
+  [`definition-of-done.md`](definition-of-done.md) before integration.
 
-Rebase your feature branch on `main` (don't merge `main` into it). Resolve
-conflicts locally, re-run `composer check`, force-push your branch.
+## When `main` has moved on
+
+A branch that no longer fast-forwards onto `main` is replayed, not rebased:
+
+```sh
+git switch -c <type>/<description>-2 origin/main
+git cherry-pick <first>^..<last>
+```
+
+Re-validate each replayed commit, push the new branch, and integrate it once its
+tip is green. The old branch stays as it was until it is deleted.
 
 ## Scope discipline
 
-One PR = one intent. Do not fold unrelated refactoring, formatting sweeps, or
-dependency bumps into a feature PR. If you spot an unrelated problem, open an
-issue or a separate PR. See [`definition-of-done.md`](definition-of-done.md).
+One branch = one intent. Do not fold unrelated refactoring, formatting sweeps,
+or dependency bumps into a feature branch. If you spot an unrelated problem,
+open an issue or start a separate branch. See
+[`definition-of-done.md`](definition-of-done.md).

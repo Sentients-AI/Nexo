@@ -1,7 +1,7 @@
 # Definition of Done
 
 A change is done when the items below that **apply to it** are satisfied. Not
-every item applies to every change — a docs-only PR has no tests to add, a
+every item applies to every change — a docs-only change has no tests to add, a
 tooling chore has no authorization impact. Judgement is expected; skipping an
 item that *does* apply is not.
 
@@ -13,12 +13,13 @@ item that *does* apply is not.
       manifest): `npm ci` → `npm run build` → `composer check`
       (`composer validate --strict`, `composer audit`, Pint, PHPStan, Pest)
       → `npm run typecheck` → `npm test` → `npm audit --omit=dev`.
-- [ ] CI is green on the PR.
+- [ ] CI is green, both required checks, on the exact commit being integrated.
 - [ ] No secrets, credentials, or real data committed.
 - [ ] The diff is focused — no unrelated refactoring, formatting sweeps, or
       dependency bumps folded in.
 - [ ] Self-review done: you have read your own diff line by line.
-- [ ] PR reviewed and approved; review conversations resolved.
+- [ ] Each commit is atomic, validated and pushed; history is unrewritten.
+- [ ] The owner has explicitly authorised integrating this change.
 
 ## When code behaviour changed
 
@@ -31,7 +32,7 @@ item that *does* apply is not.
 - [ ] Migration is reversible or its irreversibility is called out.
 - [ ] Money stored as integer minor units; foreign keys and indexes intentional.
 - [ ] Destructive schema change flagged, with the impact on existing production
-      data stated and reviewer sign-off.
+      data stated and the owner's explicit approval.
 
 ## When access to owned data is involved
 
@@ -47,7 +48,7 @@ item that *does* apply is not.
 
 ## Documentation
 
-- [ ] Docs updated in the same PR as the change they describe.
+- [ ] Docs updated on the same branch as the change they describe, before it is integrated.
 - [ ] An **ADR is added** if the change moves a domain boundary, changes how
       data is isolated between vendors, changes the money flow, adds/removes a
       runtime dependency, or changes the deployment model

@@ -35,7 +35,7 @@ the repository [`SECURITY.md`](../../SECURITY.md).
   check. "The UI doesn't link to it" is not authorization.
 - When vendor scoping lands (ADR-0003), vendor-context queries are scoped to the
   authenticated vendor explicitly and that scoping is enforced at a base layer,
-  not left to each query. Cross-vendor read/write denial is a merge-gate test
+  not left to each query. Cross-vendor read/write denial is an integration-gate test
   suite.
 - Default to deny. Add access deliberately.
 
@@ -84,7 +84,7 @@ every response gets them, error and maintenance pages included
   development. Behind a TLS-terminating proxy the demo host must be a
   trusted proxy, or requests will not count as HTTPS.
 - Adding a third-party origin (payments, analytics, images) means adding
-  it to the policy in the same PR, with a test.
+  it to the policy in the same change, with a test.
 
 ## Dependency auditing
 
