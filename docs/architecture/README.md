@@ -29,7 +29,7 @@ The template is [`adr/ADR-TEMPLATE.md`](adr/ADR-TEMPLATE.md) (ADR-0006). Propose
 | [0002](adr/0002-vendor-is-a-tenant-record.md) | A vendor is the existing tenant record | Accepted. **Proposed to be marked Superseded by 0005** (fresh database) |
 | [0003](adr/0003-context-dependent-vendor-scoping.md) | Context-dependent vendor scoping | Accepted; refined by 0011 |
 | [0004](adr/0004-order-group-and-per-vendor-orders.md) | One basket, one payment, one order per vendor | Accepted. **Superseded by 0012 on acceptance** |
-| [0005](adr/ADR-0005-vendor-naming.md) | Use Vendor as the seller entity | Proposed. **Recommended: accept** (file to be renamed `0005-vendor-naming.md`) |
+| [0005](adr/0005-vendor-naming.md) | Use Vendor as the seller entity | Accepted (owner, 2026-11-22; supersedes 0002; one implementation interpretation on the status line: a module-owned `vendors` table) |
 | [0006](adr/0006-adr-process-v2.md) | Nexo 2.0 ADR template and statuses | Accepted (brief) |
 | [0007](adr/0007-product-positioning-currency-and-locales.md) | Portfolio marketplace; MYR; EN primary with AR/MS | Accepted (D-4, D-5) |
 | [0008](adr/0008-repository-and-frontend-stack.md) | This repository; Vue 3 + Inertia + TS | Accepted (D-1, D-2) |

@@ -180,7 +180,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) and
 
 The product calls a seller a **vendor**. [ADR-0002](docs/architecture/adr/0002-vendor-is-a-tenant-record.md)
 used `tenant` for the previous SaaS codebase; the proposed
-[ADR-0005](docs/architecture/adr/ADR-0005-vendor-naming.md) uses `Vendor` for the
+[ADR-0005](docs/architecture/adr/0005-vendor-naming.md) uses `Vendor` for the
 marketplace domain, and new code and docs follow it. No tenant or vendor model
 exists in the code yet.
 

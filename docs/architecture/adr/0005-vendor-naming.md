@@ -1,6 +1,6 @@
 # ADR-0005: Use Vendor as the Marketplace Seller Entity
 
-- Status: Proposed
+- Status: Accepted (owner, 2026-11-22); supersedes ADR-0002. Implementation interpretation accepted by the owner, not a change to the decision: (1, 2026-11-22) in Nexo v2 the Vendor is persisted in a module-owned `vendors` table, owned by the Vendors module (ADR-0010; `domain-context-map.md` §2). Nexo v2 has no `tenants` table or `Tenant` model, and none is introduced.
 - Date: 2026-09-10
 
 ## Context
