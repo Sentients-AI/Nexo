@@ -3,7 +3,7 @@
 Work is tracked as issues and flows:
 
 ```
-Epic  →  Story  →  Task  →  Pull Request
+Epic  →  Story  →  Task  →  Branch (pull request optional)
 ```
 
 - **Epic** — a large capability spanning multiple stories (e.g. "Split checkout",
@@ -13,12 +13,15 @@ Epic  →  Story  →  Task  →  Pull Request
   requirement. Has acceptance criteria written as observable behaviour. Uses the
   [Story issue form](../../.github/ISSUE_TEMPLATE/story.yml).
 - **Task** — an implementation slice of a story, or standalone technical work.
-  Small enough for one focused PR. Uses the
+  Small enough for one focused branch. Uses the
   [Task issue form](../../.github/ISSUE_TEMPLATE/task.yml).
-- **Pull Request** — implements one task (or a small story), links the issue with
-  `Closes #NN`, and satisfies the [Definition of Done](definition-of-done.md).
+- **Branch** — implements one task (or a small story) in atomic commits and
+  satisfies the [Definition of Done](definition-of-done.md). Put `Closes #NN`
+  in the body of its last commit: GitHub closes the issue when that commit
+  reaches `main`. Otherwise close it by hand, naming the commits.
 
-Not every change needs the full chain. A typo fix is a PR. A one-off chore is a
+Not every change needs the full chain. Issues are recommended for substantial
+work and optional for small changes: a typo fix is just a commit. A one-off chore is a
 Task. Only product-driven work needs a Story with a requirement behind it.
 
 ## Issue types (labels)

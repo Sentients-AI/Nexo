@@ -1,6 +1,6 @@
 # Code Quality & Tooling
 
-Three tools enforce the baseline. All three run in CI on every pull request, and
+Three tools enforce the baseline. All three run in CI on every push, and
 all three are runnable locally with the same result.
 
 | Concern           | Tool                     | Command               |
@@ -37,7 +37,7 @@ composer analyse
 
 - **Level 6.** This gives full parameter/return type enforcement without
   fighting framework-shipped config defaults. Raise it one level at a time in a
-  dedicated PR once the codebase clears the next level cleanly.
+  dedicated change once the codebase clears the next level cleanly.
 - **Analysed paths:** `app`, `bootstrap/app.php`, `config`, `database`,
   `routes`, `public/index.php`. Test files are not analysed by PHPStan — Pest's
   functional API is not statically resolvable without full Pest support; test
@@ -150,7 +150,7 @@ composer analyse
 URL's locale. It receives only the status code (NFR-SEC-07). JSON clients
 keep JSON errors; with `APP_DEBUG=true` a 500 shows Laravel's debug page.
 
-## Before every pull request
+## Before every integration
 
 ```sh
 composer check

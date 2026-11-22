@@ -9,10 +9,10 @@ How the team builds and maintains Nexo. Product requirements live in
 | [`architecture-guidelines.md`](architecture-guidelines.md) | Day-to-day rules for structuring code; when an ADR is required |
 | [`code-quality.md`](code-quality.md) | Pint, PHPStan/Larastan, the `composer check` gate |
 | [`database.md`](database.md) | Migration and schema conventions |
-| [`definition-of-done.md`](definition-of-done.md) | The checklist a change must satisfy before merge |
+| [`definition-of-done.md`](definition-of-done.md) | The checklist a change must satisfy before integration |
 | [`error-handling.md`](error-handling.md) | Exception and logging conventions |
-| [`git-workflow.md`](git-workflow.md) | Branching, PRs, commits, merge policy |
-| [`issue-workflow.md`](issue-workflow.md) | Epic → Story → Task → PR; issue types |
+| [`git-workflow.md`](git-workflow.md) | Branching, commits, integration into `main`, optional PRs |
+| [`issue-workflow.md`](issue-workflow.md) | Epic → Story → Task → branch; issue types |
 | [`rate-limiting.md`](rate-limiting.md) | Strict versus non-strict rate limiting in Laravel |
 | [`security.md`](security.md) | Engineering security baseline |
 | [`testing.md`](testing.md) | Pest conventions: unit vs feature, naming, fakes |
@@ -20,4 +20,4 @@ How the team builds and maintains Nexo. Product requirements live in
 ## Principle
 
 Documentation is part of the system. If a change alters behaviour, architecture,
-operations, or product scope, the relevant docs change in the same pull request.
+operations, or product scope, the relevant docs change on the same branch, before integration.
