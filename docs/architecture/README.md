@@ -27,7 +27,7 @@ The template is [`adr/ADR-TEMPLATE.md`](adr/ADR-TEMPLATE.md) (ADR-0006). Propose
 |---|---|---|
 | [0001](adr/0001-adr-template-and-process.md) | ADR template and process | Accepted; template superseded by 0006 |
 | [0002](adr/0002-vendor-is-a-tenant-record.md) | A vendor is the existing tenant record | Superseded by 0005 (owner, 2026-11-22; fresh database) |
-| [0003](adr/0003-context-dependent-vendor-scoping.md) | Context-dependent vendor scoping | Accepted; refined by 0011 |
+| [0003](adr/0003-context-dependent-vendor-scoping.md) | Context-dependent vendor scoping | Accepted; refined by 0011 (one implementation interpretation on the status line, 2026-11-22: tenant names are historical, read as `Vendor` / `vendor_id`) |
 | [0004](adr/0004-order-group-and-per-vendor-orders.md) | One basket, one payment, one order per vendor | Accepted. **Superseded by 0012 on acceptance** |
 | [0005](adr/0005-vendor-naming.md) | Use Vendor as the seller entity | Accepted (owner, 2026-11-22; supersedes 0002; one implementation interpretation on the status line: a module-owned `vendors` table) |
 | [0006](adr/0006-adr-process-v2.md) | Nexo 2.0 ADR template and statuses | Accepted (brief) |
