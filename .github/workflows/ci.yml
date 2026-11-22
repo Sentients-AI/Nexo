@@ -1,9 +1,11 @@
 name: CI
 
 on:
+  # Every branch, not only main: integration is a fast-forward push of a
+  # commit whose required checks already passed, with or without a PR.
   push:
     branches:
-      - main
+      - '**'
 
   pull_request:
     branches:
@@ -18,7 +20,7 @@ concurrency:
 
 jobs:
   test:
-    # The required status check: keep this name unchanged.
+    # A required status check: keep this name unchanged.
     name: PHP 8.5 / Laravel 13
     runs-on: ubuntu-latest
 
@@ -194,6 +196,7 @@ jobs:
           php tests/Redis/bin/verify-valkey-policy.php "$RUNNER_TEMP/valkey-acl.txt" "$RUNNER_TEMP/valkey-commandstats.txt"
 
   frontend:
+    # A required status check: keep this name unchanged.
     name: Node 24 / Vue 3
     runs-on: ubuntu-latest
 
