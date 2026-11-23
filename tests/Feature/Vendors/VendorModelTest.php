@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Vendors\Domain\Vendor;
+use App\Modules\Vendors\Domain\VendorLifecycle;
 use App\Modules\Vendors\Domain\VendorStatus;
 use Illuminate\Support\Facades\DB;
 
@@ -55,4 +56,23 @@ it('lists exactly the statuses the database allows', function (): void {
     preg_match_all("/'([^']*)'/", stripslashes($clause), $matches);
 
     expect($matches[1])->toEqualCanonicalizing(array_column(VendorStatus::cases(), 'value'));
+});
+
+it('may operate only while approved, through each lifecycle state', function (): void {
+    $vendor = Vendor::factory()->create();
+    $lifecycle = new VendorLifecycle;
+    $states = [$vendor->canOperate()];
+
+    $lifecycle->approve($vendor);
+    $states[] = $vendor->canOperate();
+
+    $lifecycle->suspend($vendor);
+    $states[] = $vendor->canOperate();
+
+    $lifecycle->reactivate($vendor);
+    $states[] = $vendor->canOperate();
+
+    // pending, approved, suspended, approved again.
+    expect($states)->toBe([false, true, false, true])
+        ->and($vendor->fresh()?->canOperate())->toBeTrue();
 });

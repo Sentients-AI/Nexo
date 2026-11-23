@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
- * A marketplace seller (ADR-0005). Persistence only: lifecycle transitions,
- * membership and authorisation are later tasks. Status is not mass
- * assignable, so it can change only by an explicit assignment.
+ * A marketplace seller (ADR-0005). Its status changes only through
+ * VendorLifecycle (dependency-rules.md L4) and is not mass assignable.
+ * Membership and authorisation are later tasks.
  *
  * @property int $id
  * @property string $slug
@@ -47,5 +47,15 @@ class Vendor extends Model
         return [
             'status' => VendorStatus::class,
         ];
+    }
+
+    /**
+     * Whether this Vendor may operate in the marketplace. Today that is derived
+     * from its status alone, because no other marketplace condition exists yet
+     * (Story #1): see VendorStatus::canOperate().
+     */
+    public function canOperate(): bool
+    {
+        return $this->status->canOperate();
     }
 }
