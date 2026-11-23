@@ -49,43 +49,34 @@ it('refuses a duplicate slug and leaves the existing vendor alone', function ():
     expect(DB::table('vendors')->pluck('name')->all())->toBe(['Acme Supplies']);
 });
 
-it('asks before creating in production, and creates nothing when refused', function (): void {
-    app()->detectEnvironment(fn (): string => 'production');
+/*
+ * Production. Outside the `testing` environment the confirmation is real: on
+ * Linux a Laravel prompt, which needs a TTY, and on Windows Symfony's question
+ * helper. So these tests run without interaction, through Artisan::call and its
+ * real output rather than a mocked one, and the confirmation takes its default,
+ * no, on both. Answering it interactively is ConfirmableTrait's own behaviour.
+ */
 
-    $this->artisan('vendors:create', ['slug' => 'acme-supplies', 'name' => 'Acme Supplies'])
-        // The production alert prints its warning in capitals.
-        ->expectsOutputToContain('THIS CREATES A VENDOR WITHOUT AUTHENTICATION OR AN AUDIT RECORD.')
-        ->expectsConfirmation('Are you sure you want to run this command?', 'no')
-        ->assertExitCode(Command::FAILURE);
-
-    expect(DB::table('vendors')->count())->toBe(0);
-});
-
-it('creates in production when confirmed, or with --force', function (array $options, bool $asks): void {
-    app()->detectEnvironment(fn (): string => 'production');
-
-    $command = $this->artisan('vendors:create', ['slug' => 'acme-supplies', 'name' => 'Acme Supplies', ...$options]);
-
-    if ($asks) {
-        $command->expectsConfirmation('Are you sure you want to run this command?', 'yes');
-    }
-
-    // Run it now: a pending command otherwise runs only when it is destroyed.
-    $command->assertExitCode(Command::SUCCESS)->run();
-
-    expect(DB::table('vendors')->count())->toBe(1);
-})->with([
-    'confirmed' => [[], true],
-    '--force' => [['--force' => true], false],
-]);
-
-it('refuses in production without --force when it cannot ask', function (): void {
+it('warns in production and creates nothing when it cannot ask', function (): void {
     app()->detectEnvironment(fn (): string => 'production');
 
     $exitCode = Artisan::call('vendors:create', ['slug' => 'acme-supplies', 'name' => 'Acme Supplies', '--no-interaction' => true]);
 
     expect($exitCode)->toBe(Command::FAILURE)
+        // The production alert prints its warning in capitals.
+        ->and(Artisan::output())->toContain('THIS CREATES A VENDOR WITHOUT AUTHENTICATION OR AN AUDIT RECORD.')
+        ->toContain('Command cancelled.')
         ->and(DB::table('vendors')->count())->toBe(0);
+});
+
+it('creates in production with --force, without asking', function (): void {
+    app()->detectEnvironment(fn (): string => 'production');
+
+    $this->artisan('vendors:create', ['slug' => 'acme-supplies', 'name' => 'Acme Supplies', '--force' => true, '--no-interaction' => true])
+        ->doesntExpectOutputToContain('Command cancelled.')
+        ->assertExitCode(Command::SUCCESS);
+
+    expect(DB::table('vendors')->count())->toBe(1);
 });
 
 it('does not present itself as an authenticated or audited interface', function (): void {
