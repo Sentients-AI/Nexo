@@ -56,6 +56,10 @@ own step: `php artisan test --testsuite=Arch`.
   `dependency-rules.md` and `domain-context-map.md`: change a document and the
   registry in the same commit.
 - Pest's `php` and `security` presets run here too (`PresetsTest.php`).
+- A rule arch tests cannot see, such as an assignment, is a PHPStan rule in
+  `tests/Arch/PHPStan/`, registered in `phpstan.neon.dist`. Its
+  `RuleTestCase` runs in this suite against a violation fixture in
+  `tests/Arch/Fixtures/<rule>/` and an allowed one in `<rule>Allowed/`.
 
 ### Concurrency tests — `tests/Concurrency/`
 

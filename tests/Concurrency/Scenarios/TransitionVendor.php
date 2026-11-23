@@ -61,7 +61,8 @@ final class TransitionVendor implements Scenario
             throw InvalidVendorTransition::for((int) $vendor->getKey(), $operation, $from, $vendor->status);
         }
 
-        $vendor->status = $to;
+        // The negative control must write the status unguarded: that is the race it shows.
+        $vendor->status = $to; // @phpstan-ignore nexo.vendorStatusWrite
         $vendor->save();
     }
 }

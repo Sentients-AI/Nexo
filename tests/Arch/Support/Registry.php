@@ -51,7 +51,6 @@ final class Registry
      */
     public const DEFERRED = [
         'L3' => 'First module with controllers and Eloquent models',
-        'L4' => 'First state machine (Vendor lifecycle)',
         'M3' => 'Second module that owns tables',
         'M6' => 'ADR-0017 accepted and the first integration event',
         'F2' => 'First typed page contract',

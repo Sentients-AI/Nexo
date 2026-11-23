@@ -17,7 +17,7 @@ Domain ──► Shared only
 | L1 | `Domain` does not import `Illuminate\Http`, `Illuminate\Support\Facades\Request`, `Inertia\`, `Filament\`, `Livewire\`, `Stripe\` | `arch()->expect('App\Modules\*\Domain')->not->toUse([...])` |
 | L2 | `Application` does not import `Http`, `Filament`, `Inertia` | similar |
 | L3 | Controllers do not use `DB::`, `Model::create/update/save/delete` or status setters; they call one Application use case | `expect('App\Modules\*\Http\Controllers')->not->toUse('Illuminate\Support\Facades\DB')`. The method-call part is deferred (§6) |
-| L4 | Only state-machine classes assign `status` attributes | Deferred (§6): needs a PHPStan rule, because arch tests cannot see assignments |
+| L4 | Only state-machine classes assign `status` attributes | PHPStan rule `Tests\Arch\PHPStan\VendorStatusWriteRule`, registered in `phpstan.neon.dist`: only `VendorLifecycle` writes a Vendor's status. It reports property, offset and `setAttribute` writes, and a `status` key passed to Eloquent or query-builder writes on `Vendor`, its builder or the `vendors` table. Its fixtures run in the Arch suite. It sees only statically known writes: not a non-constant array, a column or table name in a variable, raw SQL, or code outside PHPStan's paths (tests). The next state machine adds its model to the rule |
 | L5 | Provider SDKs (`Stripe\`) are used only in `Payments\Infrastructure` | arch |
 | L6 | `env()` is used only in `config/` | existing rule |
 | L7 | No debug helpers (`dd`, `dump`, `ray`, `var_dump`) | existing preset |
@@ -121,7 +121,6 @@ These rules are normative but not yet enforced, because the code they constrain 
 | Rule | Why deferred | Trigger | Expected milestone |
 |---|---|---|---|
 | L3, method-call part (Eloquent writes and status setters in controllers) | Arch tests cannot see method calls; needs a PHPStan rule | First module with controllers and Eloquent models | M3 |
-| L4 (status assigned only by state machines) | Arch tests cannot see assignments; needs a PHPStan rule | First state machine (Vendor lifecycle) | M3 |
 | M3 (no relationship, join or raw query on another module's table) | Needs tables and the table-ownership map in `database-design.md` | Second module that owns tables | M3–M4 |
 | M6 (events published only by their owning module) | No events exist; ADR-0017 is Proposed | ADR-0017 accepted and the first integration event | Outbox milestone; M3 at the earliest (`VendorApproved`) |
 | F2 (pages import server-data types only from `types/generated.d.ts`) | ADR-0018 is Proposed; no generated types exist | First typed page contract | M3 |

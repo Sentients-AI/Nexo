@@ -22,5 +22,11 @@ parameters:
         - tests/Concurrency/Harness
         - tests/Concurrency/Scenarios
         - tests/Concurrency/bin
+        # Project PHPStan rules (dependency-rules.md).
+        - tests/Arch/PHPStan
 
     tmpDir: build/phpstan
+
+rules:
+    # L4: only VendorLifecycle writes a Vendor's status.
+    - Tests\Arch\PHPStan\VendorStatusWriteRule
