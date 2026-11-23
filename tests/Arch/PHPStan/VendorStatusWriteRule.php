@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Arch\PHPStan;
 
-use App\Modules\Vendors\Domain\Vendor;
 use App\Modules\Vendors\Domain\VendorLifecycle;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
@@ -15,7 +13,6 @@ use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\AssignOp;
 use PhpParser\Node\Expr\AssignRef;
 use PhpParser\Node\Expr\MethodCall;
-use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\NullsafePropertyFetch;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
@@ -28,7 +25,6 @@ use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\Constant\ConstantStringType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
-use PHPStan\Type\TypeCombinator;
 
 /**
  * Rule L4 for the Vendor (dependency-rules.md §1, INV-14): only
@@ -56,8 +52,6 @@ final class VendorStatusWriteRule implements Rule
     public const IDENTIFIER = 'nexo.vendorStatusWrite';
 
     private const COLUMN = 'status';
-
-    private const TABLE = 'vendors';
 
     /** Methods whose array arguments are written to the model or table. */
     private const WRITE_METHODS = [
@@ -108,17 +102,17 @@ final class VendorStatusWriteRule implements Rule
             }
 
             if ($method === 'setAttribute') {
-                return $this->isVendor($scope->getType($node->var)) && $this->isStatusName($node->getArgs()[0] ?? null, $scope);
+                return VendorTargets::isVendor($scope->getType($node->var)) && $this->isStatusName($node->getArgs()[0] ?? null, $scope);
             }
 
             return in_array($method, self::WRITE_METHODS, true)
-                && $this->targetsVendors($node->var, $scope)
+                && VendorTargets::receivesVendorWrites($node->var, $scope)
                 && $this->argumentsWriteStatus($node->getArgs(), $scope);
         }
 
         if ($node instanceof StaticCall && $node->name instanceof Identifier && $node->class instanceof Name) {
             return in_array($node->name->toString(), self::WRITE_METHODS, true)
-                && $this->isVendor(new ObjectType($scope->resolveName($node->class)))
+                && VendorTargets::isVendor(new ObjectType($scope->resolveName($node->class)))
                 && $this->argumentsWriteStatus($node->getArgs(), $scope);
         }
 
@@ -131,48 +125,15 @@ final class VendorStatusWriteRule implements Rule
         if ($target instanceof PropertyFetch || $target instanceof NullsafePropertyFetch) {
             return $target->name instanceof Identifier
                 && $target->name->toString() === self::COLUMN
-                && $this->isVendor($scope->getType($target->var));
+                && VendorTargets::isVendor($scope->getType($target->var));
         }
 
         if ($target instanceof ArrayDimFetch && $target->dim !== null) {
-            return $this->isVendor($scope->getType($target->var))
-                && $this->isConstantString($scope->getType($target->dim), self::COLUMN);
+            return VendorTargets::isVendor($scope->getType($target->var))
+                && VendorTargets::isConstantString($scope->getType($target->dim), self::COLUMN);
         }
 
         return false;
-    }
-
-    /** The receiver writes to vendors: a Vendor, its Eloquent builder, or a query on the table. */
-    private function targetsVendors(Expr $receiver, Scope $scope): bool
-    {
-        $expr = $receiver;
-
-        while (true) {
-            $type = $scope->getType($expr);
-
-            if ($this->isVendor($type) || $this->isVendorBuilder($type)) {
-                return true;
-            }
-
-            if (($expr instanceof MethodCall || $expr instanceof NullsafeMethodCall || $expr instanceof StaticCall)
-                && $expr->name instanceof Identifier
-                && in_array($expr->name->toString(), ['table', 'from'], true)
-            ) {
-                $table = $expr->getArgs()[0] ?? null;
-
-                return $table !== null && $this->isConstantString($scope->getType($table->value), self::TABLE);
-            }
-
-            if ($expr instanceof StaticCall) {
-                return $expr->class instanceof Name && $this->isVendor(new ObjectType($scope->resolveName($expr->class)));
-            }
-
-            if (! $expr instanceof MethodCall && ! $expr instanceof NullsafeMethodCall) {
-                return false;
-            }
-
-            $expr = $expr->var;
-        }
     }
 
     /**
@@ -207,33 +168,6 @@ final class VendorStatusWriteRule implements Rule
 
     private function isStatusName(?Arg $arg, Scope $scope): bool
     {
-        return $arg !== null && $this->isConstantString($scope->getType($arg->value), self::COLUMN);
-    }
-
-    private function isConstantString(Type $type, string $value): bool
-    {
-        foreach ($type->getConstantStrings() as $string) {
-            if ($string->getValue() === $value) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isVendor(Type $type): bool
-    {
-        $type = TypeCombinator::removeNull($type);
-
-        return ! $type->isNull()->yes() && (new ObjectType(Vendor::class))->isSuperTypeOf($type)->yes();
-    }
-
-    private function isVendorBuilder(Type $type): bool
-    {
-        if (! (new ObjectType(EloquentBuilder::class))->isSuperTypeOf($type)->yes()) {
-            return false;
-        }
-
-        return $this->isVendor($type->getTemplateType(EloquentBuilder::class, 'TModel'));
+        return $arg !== null && VendorTargets::isConstantString($scope->getType($arg->value), self::COLUMN);
     }
 }
