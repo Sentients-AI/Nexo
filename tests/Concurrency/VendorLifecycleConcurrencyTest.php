@@ -15,24 +15,44 @@ use Tests\Concurrency\Scenarios\TransitionVendor;
  * operation at once (ADR-0009 §3).
  *
  * The fixtures are committed so the workers can see them. DatabaseTruncation
- * truncates before each test, not after, so remove them once each test is
- * done: a RefreshDatabase test run later in the same process would otherwise
- * find them.
+ * truncates before each test, not after, so each test removes the vendors it
+ * stored once it is done, by id, whether it passed or failed: a
+ * RefreshDatabase test run later in the same process would otherwise find
+ * them. Concurrently::run() returns, or throws, only after every worker has
+ * stopped, so no worker is still writing when they are removed.
  */
 
 afterEach(function (): void {
-    DB::table('vendors')->delete();
+    $ids = committedVendorIds();
+
+    if ($ids->count() > 0) {
+        DB::table('vendors')->whereIn('id', $ids->getArrayCopy())->delete();
+        $ids->exchangeArray([]);
+    }
 });
+
+/** The ids of the vendors this test committed. */
+function committedVendorIds(): ArrayObject
+{
+    /** @var ArrayObject<int, int> $ids */
+    static $ids = new ArrayObject;
+
+    return $ids;
+}
 
 function vendorStoredAs(VendorStatus $status): int
 {
-    return DB::table('vendors')->insertGetId([
+    $id = DB::table('vendors')->insertGetId([
         'slug' => 'acme-supplies',
         'name' => 'Acme Supplies',
         'status' => $status->value,
         'created_at' => '2026-01-01 00:00:00.000000',
         'updated_at' => '2026-01-01 00:00:00.000000',
     ]);
+
+    committedVendorIds()->append($id);
+
+    return $id;
 }
 
 /**
