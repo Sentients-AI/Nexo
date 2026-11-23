@@ -30,3 +30,5 @@ parameters:
 rules:
     # L4: only VendorLifecycle writes a Vendor's status.
     - Tests\Arch\PHPStan\VendorStatusWriteRule
+    # L8: only CreateVendor creates a Vendor.
+    - Tests\Arch\PHPStan\VendorCreationRule

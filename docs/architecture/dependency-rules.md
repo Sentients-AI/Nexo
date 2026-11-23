@@ -21,6 +21,7 @@ Domain ──► Shared only
 | L5 | Provider SDKs (`Stripe\`) are used only in `Payments\Infrastructure` | arch |
 | L6 | `env()` is used only in `config/` | existing rule |
 | L7 | No debug helpers (`dd`, `dump`, `ray`, `var_dump`) | existing preset |
+| L8 | Only `Vendors\Application\CreateVendor` creates a Vendor (Story #1; #29, owner decision D5) | PHPStan rule `Tests\Arch\PHPStan\VendorCreationRule`, registered in `phpstan.neon.dist`. It reports `new Vendor` (an anonymous subclass or a `class-string` of Vendor included), `Vendor::factory()`, `replicate()` and `newInstance()` on a Vendor, and a creating method (`create`, `make`, `firstOrNew`, `firstOrCreate`, `updateOrCreate`, `insert*`, `fillAndInsert*`, `upsert`, `updateOrInsert`, …) called on a Vendor, on `Vendor::`, on its builder or on a query over the `vendors` table. Methods that may insert as well as update count as creating. Its fixtures run in the Arch suite. Like L4, it sees only statically known code: not `save()` or `push()` (a new model cannot be told from a stored one, so the ways of getting an unsaved Vendor are reported instead), container resolution (`app(Vendor::class)`), `unserialize()` or reflection, a table name in a variable or aliased (`vendors as v`), raw SQL, code outside PHPStan's paths (tests, so a factory used by tests), or an ignore comment without an identifier |
 
 ## 2. Module rules
 
