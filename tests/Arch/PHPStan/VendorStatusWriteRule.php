@@ -44,7 +44,9 @@ use PHPStan\Type\TypeCombinator;
  * It sees only what is statically known: a status key in a non-constant
  * array, a column or table name held in a variable, raw SQL
  * (`DB::statement`, `DB::update`), reflection and code outside PHPStan's
- * paths (tests) are not reported.
+ * paths (tests) are not reported. An ignore comment without an identifier
+ * (`@phpstan-ignore-line`, `@phpstan-ignore-next-line`) also hides a report;
+ * code-quality.md forbids such ignores, and nothing enforces that yet.
  *
  * @implements Rule<Expr>
  */
