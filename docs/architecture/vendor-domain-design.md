@@ -204,3 +204,36 @@ Therefore, the proposed design is to use `Vendor` consistently for the new marke
 ### Proposed ADR
 
 This decision should be documented in a new ADR explaining the divergence from ADR-0002 and establishing `Vendor` as the marketplace domain terminology.
+
+## 11. Implementation status (Story #1)
+
+Sections 1–10 are the approved design and are not changed here. This section records how Story #1 implemented it.
+
+| Concern | Implementation | Enforced by |
+|---|---|---|
+| Identity (§2, §9) | The `vendors` table: generated `id`, unique `slug`, `name`, `status`, `timestamps(6)` | Database constraints; `VendorTableTest` |
+| Slug uniqueness | `vendors_slug_unique`. Under the column's default collation, slugs that differ only in case or accents are duplicates | The database; `CreateVendorTest`, `VendorCreationConcurrencyTest` |
+| Valid status | `vendors_status_check` on a binary-collated column, default `pending` | The database |
+| Lifecycle (§4) | `VendorLifecycle`: approve, suspend, reactivate, each a conditional update on the expected status (INV-14) | L4 (`VendorStatusWriteRule`); `VendorLifecycleTest`, `VendorLifecycleConcurrencyTest` |
+| Creation (§5) | `Vendors\Application\CreateVendor::handle(name, slug)` creates the Vendor in `pending` and does nothing else | L8 (`VendorCreationRule`); `CreateVendorTest` |
+| Operator command | `php artisan vendors:create {slug} {name}`, which calls `CreateVendor` | `CreateVendorCommandTest` |
+| Operating eligibility (§6, §8) | `VendorStatus::canOperate()` and `Vendor::canOperate()`: true only for `approved` | `VendorStatusTest`, `VendorModelTest` |
+
+### Creation rules (#29, owner decisions D1, D2)
+
+- The operator supplies the slug: lowercase ASCII kebab-case, 3–80 characters, with no leading, trailing or consecutive hyphens. It is stored exactly as given.
+- The name is trimmed, must be valid UTF-8, and is 1–255 characters.
+- An invalid name or slug throws `InvalidVendorDetails`, which names the field but never the value.
+- An equivalent slug already in use throws `VendorSlugAlreadyExists`. Only a violation of `vendors_slug_unique` is translated; every other database error propagates. There is no lookup before the insert, so two concurrent creations of one slug cannot both succeed.
+- `vendors:create` exits 0 on success, 2 for an invalid slug or name, and 1 for a duplicate slug or a refused production confirmation.
+
+### Operating eligibility
+
+`canOperate()` answers from the status alone, because no other marketplace condition exists yet. Approval is required but, per §6, not necessarily sufficient: a later condition is added to `Vendor::canOperate()`, which then stops being a function of status only. Nothing enforces eligibility yet, because the features it will gate (products, orders) do not exist.
+
+### Known limitations
+
+- **No authentication or authorisation.** `CreateVendor`, `VendorLifecycle` and `vendors:create` do not check who calls them. No operator identity exists, because ADR-0011 is Proposed. Anyone who can run Artisan on a server can create a Vendor. In production the command asks for confirmation, or needs `--force`, but that is a guard against mistakes, not access control.
+- **No audit record.** INV-19 requires an audit record for vendor lifecycle changes, and REQ-VENDOR-MGMT-009 (draft) asks for the same. `Shared\Audit` does not exist yet (owner decision D3 of M6.1; #29 D3), so neither creation nor the lifecycle transitions record an actor or write an audit entry. This is open until `Shared\Audit` is built.
+- **No onboarding.** Applications, rejection (REQ-VENDOR-001, 001A, draft) and the Owner membership created on approval (FR-VEN-02, draft) are not built. Task 4 follows Story #1 (#29 D7).
+- **Guard blind spots.** L4 and L8 see only statically known code. Their blind spots are listed in `dependency-rules.md` §1.
