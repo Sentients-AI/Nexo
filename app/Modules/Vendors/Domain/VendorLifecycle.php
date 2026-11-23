@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  * cannot succeed twice, and a rejected operation changes nothing. It runs on
  * the default connection, inside the caller's transaction if there is one.
  *
+ * MySQL reports changed rows, not matched rows (no PDO::MYSQL_ATTR_FOUND_ROWS),
+ * so "1 row" means this call changed the status. That holds because every
+ * operation's target status differs from its source status.
+ *
  * This is the only class that may write a Vendor's status
  * (dependency-rules.md L4).
  */
