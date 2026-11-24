@@ -57,7 +57,7 @@ Only key columns are listed. Every table also has `created_at`/`updated_at` unle
 |---|---|---|
 | `vendor_applications` | id, public_id, user_id, store_name, description, contact_phone, category_focus, status (`submitted/approved/rejected`), decided_by, decided_at, decision_reason | FK user; one open application per user: UNIQUE (user_id, open_marker) |
 | `vendors` | id, public_id, slug, name, status (`pending/approved/suspended`), approved_at, suspended_at, suspension_reason | UNIQUE slug; CHECK status; INDEX status |
-| `vendor_members` | id, vendor_id, user_id, role (`owner/manager/fulfilment/finance/support`), status (`active/deactivated`), owner_marker (1/NULL) | UNIQUE user_id (INV-2); UNIQUE (vendor_id, owner_marker) (one owner); FK vendor, user RESTRICT |
+| `vendor_members` | id, vendor_id, user_id, role (`owner/manager/fulfilment/finance/support`), status (`active/deactivated`, deactivation terminal), deactivated_at NULL, active_marker and owner_marker (stored generated columns, 1/NULL) | UNIQUE (user_id, active_marker) `vendor_members_one_active_per_user` (at most one active membership per user, INV-2); UNIQUE (vendor_id, owner_marker) `vendor_members_one_active_owner` (at most one active owner); CHECK role, CHECK status, CHECK deactivated_at matches status; FK vendor, user RESTRICT. Exact definitions: ADR-0011, "Migration implications" |
 | `vendor_invitations` | id, vendor_id, email, role, token_hash, invited_by, expires_at, accepted_at, revoked_at | UNIQUE token_hash; INDEX (vendor_id, email) |
 | `vendor_profiles` | vendor_id PK, tagline, description, logo_path, banner_path, return_policy, support_email | FK vendor CASCADE |
 
@@ -166,7 +166,7 @@ Only key columns are listed. Every table also has `created_at`/`updated_at` unle
 | `outbox_messages` | id ULID, type, aggregate_type, aggregate_id, payload JSON, occurred_at, dispatched_at NULL, attempts, dead_at NULL, last_error | INDEX (dispatched_at, occurred_at) |
 | `processed_messages` | consumer, message_id, processed_at | PK (consumer, message_id) |
 | `idempotency_keys` | scope, key, user_id NULL, request_hash, response JSON, status_code, created_at, expires_at | PK (scope, key) |
-| `audit_log` (append-only) | id, actor_id, impersonator_id NULL, action, subject_type, subject_id, before JSON, after JSON, ip, user_agent, created_at | INDEX (subject_type, subject_id); INDEX (actor_id, created_at) |
+| `audit_log` (append-only by application convention, ADR-0023) | id, occurred_at, actor_type (`user/system/console`), actor_user_id NULL, impersonator_user_id NULL, actor_label NULL, action, subject_type, subject_id, before JSON NULL, after JSON NULL, ip NULL | CHECK actor_type; CHECK actor_user_id present only for `user`; CHECK impersonator only for `user`; no FK on actor ids; INDEX (subject_type, subject_id); INDEX (actor_user_id, occurred_at). `user_agent` deferred until an HTTP surface exists |
 | `settings` | key, value JSON, updated_by | PK key |
 | `jobs`, `failed_jobs`, `cache`, `cache_locks` | Laravel defaults (local/dev only; Redis in demo) | — |
 

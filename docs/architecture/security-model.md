@@ -12,6 +12,7 @@
 | Vendor member | Customer with an active `vendor_members` row; `VendorContext` resolved per request | `/vendor` |
 | Platform staff | User with `platform_role` and confirmed 2FA | `/admin` (Filament) |
 | System | Scheduler, queue jobs, webhook processor; recorded as `actor_type = system` | — |
+| Console | An Artisan command run on a server; recorded as `actor_type = console` with the command name. This is provenance, not an authenticated identity (ADR-0023) | Operator commands |
 
 ## 2. Permission matrix: vendor roles
 
@@ -94,7 +95,7 @@ A `pending` vendor can manage its profile, shipping and draft products, but cann
 | Forged webhooks | Signature verification with a tolerance window; 400 on failure |
 | Replayed requests | Idempotency keys; unique provider ids |
 | Account takeover | Rate limits; email verification; staff 2FA; session regeneration on login; password rules (min 12, breached-password check via `Password::uncompromised()`) |
-| Privilege escalation through role edits | Roles in code; membership changes only by the Owner via a use case; staff roles only by Admin |
+| Privilege escalation through role edits | Roles in code; team membership changes only by the Owner via a use case; a vendor's first owner and owner reassignment only by a platform operator, through audited use cases that share the ownership mechanism (ADR-0011 Decision 2); staff roles only by Admin, through the internal `GrantPlatformRole` use case |
 | Malicious uploads | MIME sniffing, re-encode, size limits, private storage until processed |
 | Information leakage | Generic production errors (`APP_DEBUG=false`); vendors see minimal customer PII (NFR-PRIV-02) |
 | Impersonation abuse | Admin-only, audited, banner, money actions blocked |
@@ -102,11 +103,12 @@ A `pending` vendor can manage its profile, shipping and draft products, but cann
 
 ## 7. Audit events (INV-19)
 
-These actions are recorded:
+These actions are recorded. INV-19 and the owner decisions of 2026-11-24 (OD-5, OD-6) bind vendor creation, vendor lifecycle changes, membership changes and staff changes. The other rows are still draft. Mechanism: ADR-0023.
 
 - vendor application decisions;
+- vendor creation;
 - vendor lifecycle changes;
-- membership changes;
+- membership changes (first owner, transfer, reassignment, role change, deactivation);
 - product block and unblock;
 - review hide and unhide;
 - commission changes;
