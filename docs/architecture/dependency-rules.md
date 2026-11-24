@@ -126,3 +126,13 @@ These rules are normative but not yet enforced, because the code they constrain 
 | M6 (events published only by their owning module) | No events exist; ADR-0017 is Proposed | ADR-0017 accepted and the first integration event | Outbox milestone; M3 at the earliest (`VendorApproved`) |
 | F2 (pages import server-data types only from `types/generated.d.ts`) | ADR-0018 is Proposed; no generated types exist | First typed page contract | M3 |
 | F3 (no money arithmetic in components beyond display) | No server money is rendered yet | First page that renders server money | M3 |
+
+## 7. Planned rules (not enforced)
+
+These rules are decided (ADR-0011, ADR-0023) but **not implemented**. Nothing enforces them yet. Each becomes an enforced rule, with a deliberate-violation fixture, a negative control and its blind spots listed, in the task named here, and moves to §1 in that change.
+
+| Rule | Statement | Planned enforcement | Lands with |
+|---|---|---|---|
+| L9 | Only the audited orchestrators (`RegisterVendor`, `ApproveVendor`, `SuspendVendor`, `ReactivateVendor`) call `VendorLifecycle`'s transitions or `CreateVendor::handle` | PHPStan rule; together with L4 and L8, every Vendor status write and creation passes through an audited orchestrator (ADR-0023 §7) | Audited Vendor orchestration task |
+| L10 | No production code, `App\Shared\Audit` included, updates, deletes, truncates, upserts or replaces `audit_log` rows; the recorder's single insert is the only write | PHPStan rule over builder and model calls and constant SQL (ADR-0023 §8). Blind spots: table names or SQL in variables, container resolution, code outside PHPStan's paths. Database-level enforcement is deferred (ADR-0021) | Audit foundation task |
+| L11 | Only the membership use cases write `vendor_members.status`, `role`, `vendor_id` or `user_id`, and they never change `vendor_id` or `user_id` after insert | PHPStan rule, like L4 (ADR-0011 Decision 2) | Membership foundation task |
