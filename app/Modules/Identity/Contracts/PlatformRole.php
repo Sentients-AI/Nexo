@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Identity\Contracts;
+
+/**
+ * A platform staff role (ADR-0011 Decision 3). A user holds at most one, in
+ * `users.platform_role`; a user without one is not staff. The values match
+ * the column's `users_platform_role_check` constraint exactly.
+ *
+ * Nothing grants a role yet: GrantPlatformRole, the only planned writer, is
+ * #36, and it will be audited (ADR-0023).
+ */
+enum PlatformRole: string
+{
+    case Admin = 'admin';
+    case Operations = 'operations';
+    case Finance = 'finance';
+    case Support = 'support';
+}
