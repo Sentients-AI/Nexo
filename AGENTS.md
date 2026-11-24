@@ -18,8 +18,10 @@ Inertia and TypeScript (ADR-0008). One owner maintains it.
 
 - Precedence: accepted ADRs (`docs/architecture/adr/`, indexed in
   `docs/architecture/README.md`), then the normative architecture documents
-  (`dependency-rules.md`, `domain-context-map.md`, `INVARIANTS.md`), then
-  `docs/engineering/`, then the issue text.
+  (`dependency-rules.md`, `domain-context-map.md`, and the invariants in
+  `INVARIANTS.md` that are marked ratified), then `docs/engineering/`, then
+  the issue text. An unratified invariant is a draft. A ratified invariant is
+  binding, but only its implementation status says whether it is enforced.
 - Implement only accepted ADRs. An accepted ADR's body is fixed: only its
   status line changes (acceptance, supersession, an owner-accepted
   implementation interpretation), and the ADR index changes in the same commit
