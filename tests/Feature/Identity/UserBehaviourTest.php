@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Modules\Identity\Domain\User;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -107,6 +109,6 @@ it('is the model the users authentication provider returns', function (): void {
 });
 
 it('lives in Identity\Domain and resolves its factory explicitly (ADR-0010 §2b, #33)', function (): void {
-    expect(configuredUserModel())->toBe(App\Modules\Identity\Domain\User::class)
-        ->and(App\Modules\Identity\Domain\User::factory())->toBeInstanceOf(Database\Factories\UserFactory::class);
+    expect(configuredUserModel())->toBe(User::class)
+        ->and(User::factory())->toBeInstanceOf(UserFactory::class);
 });
