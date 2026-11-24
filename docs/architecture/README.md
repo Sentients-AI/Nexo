@@ -10,7 +10,7 @@ This directory records Nexo's architectural boundaries, invariants and decisions
 | [`domain-context-map.md`](domain-context-map.md) | Modules (bounded contexts), owned data, relationships, glossary |
 | [`dependency-rules.md`](dependency-rules.md) | Allowed and forbidden dependencies, enforced by arch tests |
 | [`database-design.md`](database-design.md) | Initial database model, constraints and table ownership |
-| [`INVARIANTS.md`](INVARIANTS.md) | Business invariants [INV-n], each with enforcement and proof |
+| [`INVARIANTS.md`](INVARIANTS.md) | Business invariants [INV-n], each with enforcement and proof. INV-1, INV-2, INV-13 and INV-19 are ratified (2026-11-24), each with its implementation status; the rest are draft |
 | [`security-model.md`](security-model.md) | Roles, permission matrix, isolation and enforcement points |
 | [`integration-contracts.md`](integration-contracts.md) | Browser ↔ Laravel, module ↔ module, and Nexo ↔ Stripe contracts |
 | [`financial-model.md`](financial-model.md) | Ledger, commission, refunds, disputes, payouts, reconciliation, worked examples |

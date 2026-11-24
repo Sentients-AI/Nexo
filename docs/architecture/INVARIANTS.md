@@ -1,6 +1,8 @@
 # System Invariants
 
 - **Status:** Revised 2026-11-01 (Phase 1 draft for owner review). This replaces the 2026-08-30 list. Every earlier invariant is kept, reworded or strengthened; the changes are listed at the end.
+- **Ratified invariants:** INV-1, INV-2, INV-13 and INV-19, each ratified individually by the owner on 2026-11-24 (owner decision OD-3). Every other invariant here is still a draft and binds only once it is ratified (`AGENTS.md`).
+- **Ratified is not implemented.** Each ratified invariant carries its own implementation status. Ratification makes the rule binding on new work; it does not claim that the rule is enforced or proven today.
 
 These properties must hold regardless of implementation. Each one names its **enforcement**, meaning the mechanism that makes a violation impossible or detectable, and its **proof**, meaning the test or check that demonstrates it. An invariant without both is a wish, not an invariant.
 
@@ -14,14 +16,18 @@ Requirement documents cite these as **[INV-n]**.
 
 - **Enforcement:** the `vendor.context` middleware fails closed; there is no global scope; route bindings are scoped; vendor queries require an explicit `vendorId`.
 - **Proof:** the isolation suite (merge gate), plus an arch test that every vendor controller is covered (ADR-0011).
+- **Ratified:** owner, 2026-11-24 (OD-3).
+- **Implementation status (2026-11-24):** not implemented, not verified. No vendor-owned data or vendor-facing access exists yet. Gate #30 tracks the proof, which applies at each change that introduces vendor-owned data or vendor-facing access (ADR-0011 Decision 9).
 
 **INV-2 · Identity.**
 
 - A customer identity is marketplace-wide.
-- A user is a member of at most one vendor.
-- Platform staff belong to no vendor and place no orders.
-- **Enforcement:** unique `vendor_members.user_id`, and application guards.
-- **Proof:** domain tests.
+- A user has at most one active vendor membership. A deactivated membership is kept as history and does not count.
+- Platform staff hold no vendor membership and place no orders.
+- **Enforcement:** `UNIQUE (user_id, active_marker)` on `vendor_members`; the staff exclusion by application guards under ADR-0011's locking protocol (Decision 10).
+- **Proof:** MySQL constraint tests and concurrency tests, plus domain tests.
+- **Ratified:** owner, 2026-11-24 (OD-3), with the active-membership wording above (OD-9).
+- **Implementation status (2026-11-24):** not implemented. No `vendor_members` table, `platform_role` column or staff guard exists.
 
 ## Orders
 
@@ -126,6 +132,8 @@ One implementation is used by the storefront, search indexing and checkout.
 - Vendor status is always one of `pending | approved | suspended`, and changes only through defined transitions.
 - Vendors are never physically deleted.
 - **Enforcement:** DB CHECK constraint, the state machine, and `RESTRICT` foreign keys.
+- **Ratified:** owner, 2026-11-24 (OD-3), as worded. It names no proof yet; one is still to be added to this invariant.
+- **Implementation status (2026-11-24):** partly implemented. The `vendors_status_check` constraint and `VendorLifecycle`, guarded by L4, exist and are tested (Story #1). No code path deletes a Vendor. No `RESTRICT` foreign key to `vendors` exists yet, so a Vendor can still be deleted with raw SQL. The first such foreign key arrives with `vendor_members`.
 
 ## Platform
 
@@ -137,12 +145,18 @@ One implementation is used by the storefront, search indexing and checkout.
 **INV-19 · Auditability.** These actions write an audit record (actor, impersonator if any, action, subject, before/after, IP, timestamp) in the same transaction as the change:
 
 - money-moving actions;
+- vendor creation;
 - vendor lifecycle changes;
+- vendor membership changes;
 - moderation;
 - commission changes;
-- staff changes;
+- staff changes, including platform-role changes;
 - reconciliation resolutions;
 - impersonation.
+
+- **Enforcement:** explicit audited orchestrators writing through `App\Shared\Audit` in the change's transaction (ADR-0023), with the planned rules L9 and L10.
+- **Ratified:** owner, 2026-11-24 (OD-3). Vendor creation (OD-5) and membership and platform-role changes (OD-6) were added on ratification.
+- **Implementation status (2026-11-24):** not implemented. No audit log exists. `CreateVendor`, `VendorLifecycle` and `vendors:create` write no audit record (`vendor-domain-design.md` §11).
 
 **INV-20 · Environment isolation.**
 
