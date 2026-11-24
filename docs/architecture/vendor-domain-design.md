@@ -233,7 +233,7 @@ Sections 1–10 are the approved design and are not changed here. This section r
 
 ### Known limitations
 
-- **No authentication or authorisation.** `CreateVendor`, `VendorLifecycle` and `vendors:create` do not check who calls them. No operator identity exists, because ADR-0011 is Proposed. Anyone who can run Artisan on a server can create a Vendor. In production the command asks for confirmation, or needs `--force`, but that is a guard against mistakes, not access control.
+- **No authentication or authorisation.** `CreateVendor`, `VendorLifecycle` and `vendors:create` do not check who calls them. No operator identity exists: ADR-0011 was accepted on 2026-11-24 but is not implemented. Anyone who can run Artisan on a server can create a Vendor. In production the command asks for confirmation, or needs `--force`, but that is a guard against mistakes, not access control.
 - **No audit record.** INV-19 requires an audit record for vendor lifecycle changes, and REQ-VENDOR-MGMT-009 (draft) asks for the same. `Shared\Audit` does not exist yet (owner decision D3 of M6.1; #29 D3), so neither creation nor the lifecycle transitions record an actor or write an audit entry. This is open until `Shared\Audit` is built.
 - **No onboarding.** Applications, rejection (REQ-VENDOR-001, 001A, draft) and the Owner membership created on approval (FR-VEN-02, draft) are not built. Task 4 follows Story #1 (#29 D7).
 - **Guard blind spots.** L4 and L8 see only statically known code. Their blind spots are listed in `dependency-rules.md` §1.

@@ -1,7 +1,7 @@
 # ADR-0023: Record audited changes in an append-only audit log, in the same transaction, through explicit orchestrators
 
 - **Number:** 0023
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-11-24; OD-4 to OD-8 and amendments B and D, as part of the approved Vendor Membership and Identity Foundation architecture). Accepted is not implemented: no audit log exists yet.
 - **Date:** 2026-11-24
 - **Decision owner:** Project owner
 - **Supersedes / relates to:** implements INV-19; relates to ADR-0010 (§2 lists the `Audit` recorder in the Shared kernel), ADR-0011 (Decision 12), ADR-0017 (outbox, Proposed), ADR-0021 (environments, Proposed)
