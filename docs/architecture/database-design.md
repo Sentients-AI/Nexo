@@ -46,7 +46,7 @@ Only key columns are listed. Every table also has `created_at`/`updated_at` unle
 
 | Table | Key columns | Constraints and indexes |
 |---|---|---|
-| `users` | id, public_id, name, email, email_verified_at, password, locale (`en/ar/ms`), platform_role NULL (`admin/operations/finance/support`), two_factor_secret NULL, two_factor_confirmed_at NULL, anonymised_at NULL | UNIQUE email; CHECK locale; CHECK platform_role |
+| `users` | id, public_id, name, email, email_verified_at, password, locale (`en/ar/ms`), platform_role NULL (`admin/operations/finance/support`), two_factor_secret NULL, two_factor_confirmed_at NULL, anonymised_at NULL | UNIQUE email; CHECK locale; CHECK platform_role (implemented in #33 as `users_platform_role_check` on a binary `NO PAD` column; NULL means not staff, and there is no default role) |
 | `addresses` | id, user_id, recipient_name, phone, line1, line2, city, postcode (5 digits), state, zone_code, is_default | FK user CASCADE; INDEX (user_id); at most one default via `default_marker` (1/NULL) UNIQUE (user_id, default_marker) |
 | `sessions`, `password_reset_tokens` | Laravel defaults | — |
 | `staff_invitations` | id, email, platform_role, token_hash, expires_at, accepted_at | UNIQUE token_hash |

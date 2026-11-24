@@ -27,7 +27,9 @@ Requirement documents cite these as **[INV-n]**.
 - **Enforcement:** `UNIQUE (user_id, active_marker)` on `vendor_members`; the staff exclusion by application guards under ADR-0011's locking protocol (Decision 10).
 - **Proof:** MySQL constraint tests and concurrency tests, plus domain tests.
 - **Ratified:** owner, 2026-11-24 (OD-3), with the active-membership wording above (OD-9).
-- **Implementation status (2026-11-24):** not implemented. No `vendor_members` table, `platform_role` column or staff guard exists.
+- **Implementation status (#33):** not implemented.
+  - Foundations in place: the `users.platform_role` column with its CHECK constraint, and `Identity\Contracts\Users::lockForUpdate()`, whose row lock is proven across processes.
+  - Not built yet, all in #36: the `vendor_members` table, the active-membership constraint, the staff guard and any writer of the role.
 
 ## Orders
 
