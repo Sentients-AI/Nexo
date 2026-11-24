@@ -99,19 +99,16 @@ final class Rules
 
     /**
      * C1: modules and the shared kernel never import the composition root
-     * (App\Providers, kernel-level App\Http) or App\Models. Identity alone may
-     * import App\Models\User, until User moves into it (ADR-0010 §2b).
+     * (App\Providers, kernel-level App\Http) or App\Models. There is no
+     * exception: Identity's App\Models\User exception ended when User moved to
+     * Identity\Domain\User (ADR-0010 §2b; #33).
      */
     public static function compositionRootIsNotImported(string $app): void
     {
         $root = ["{$app}\\Providers", "{$app}\\Http", "{$app}\\Models"];
 
         foreach (Registry::MODULES as $module) {
-            $expectation = expect("{$app}\\Modules\\{$module}")->not->toUse($root);
-
-            if ($module === 'Identity') {
-                $expectation->ignoring("{$app}\\Models\\User");
-            }
+            expect("{$app}\\Modules\\{$module}")->not->toUse($root);
         }
 
         expect("{$app}\\Shared")->not->toUse($root);
@@ -137,14 +134,15 @@ final class Rules
     }
 
     /**
-     * C2: the legacy allowlist is closed. App\Models holds only User and
-     * App\Http\Controllers only Controller; each exit removes its entry.
+     * C2: the legacy allowlist is closed. App\Models holds nothing (User
+     * exited to Identity\Domain\User, #33) and App\Http\Controllers only
+     * Controller; each exit removes its entry.
      */
     public static function legacyAllowlistIsClosed(string $appDirectory): void
     {
         $violations = [];
 
-        foreach (['Models' => ['User.php'], 'Http/Controllers' => ['Controller.php']] as $directory => $allowed) {
+        foreach (['Models' => [], 'Http/Controllers' => ['Controller.php']] as $directory => $allowed) {
             foreach (self::phpFilesUnder("{$appDirectory}/{$directory}") as $file) {
                 if (! in_array($file, $allowed, true)) {
                     $violations[] = "{$directory}/{$file}";

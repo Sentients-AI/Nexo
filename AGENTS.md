@@ -33,9 +33,10 @@ Inertia and TypeScript (ADR-0008). One owner maintains it.
 
 - Pragmatic DDD inside the modular monolith. Code lives in
   `app/Modules/<Module>/{Domain,Application,Infrastructure,Http,Contracts,Filament}`;
-  a directory appears with its first class. `App\Models` holds only the legacy
-  `User`. The rules are in `docs/architecture/dependency-rules.md` and are
-  enforced by `tests/Arch`.
+  a directory appears with its first class. `App\Models` is empty: `User` is
+  `App\Modules\Identity\Domain\User`, which no other module may import (M1).
+  The rules are in
+  `docs/architecture/dependency-rules.md` and are enforced by `tests/Arch`.
 - `Domain` stays framework-light: Eloquent is fine, HTTP, Inertia, Filament,
   Livewire and Stripe are not (L1), and of other code it uses only
   `App\Shared`. Modules reach each other through `Contracts`. Every table has

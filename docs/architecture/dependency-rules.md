@@ -67,8 +67,8 @@ Footnotes:
 
 | # | Rule |
 |---|---|
-| C1 | No `App\Modules\*` or `App\Shared\*` class imports `App\Providers`, `App\Http` or `App\Models`. The only exception is Identity importing `App\Models\User` until its exit milestone (M3). |
-| C2 | `App\Models` contains only `User`, and `App\Http\Controllers` contains only `Controller`. The allowlist is closed; each exit removes its entry in the same change. |
+| C1 | No `App\Modules\*` or `App\Shared\*` class imports `App\Providers`, `App\Http` or `App\Models`. There is no exception: Identity's `App\Models\User` exception ended when `User` moved to `Identity\Domain\User` (ADR-0010 §2b; #33). |
+| C2 | `App\Models` contains no class (`User` exited to `Identity\Domain\User`, #33), and `App\Http\Controllers` contains only `Controller`. The allowlist is closed; each exit removes its entry in the same change. |
 | C3 | `App\Modules` contains only the 13 modules in the matrix above. Each contains only `Domain`, `Application`, `Infrastructure`, `Http`, `Contracts` and `Filament`, and each directory exists only once its first class is written. |
 
 The composition root (`App\Providers`, kernel-level `App\Http`, `bootstrap/`, `routes/`) may import `App\Shared`, module `Contracts`, and module `Http`, `Filament` or `Infrastructure` classes only to register them.

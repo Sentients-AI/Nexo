@@ -13,7 +13,13 @@ it('rejects a module that imports kernel-level Http (C1 fixture)', function () {
     expect($failure->getMessage())->toContain("not to use 'Tests\\Arch\\Fixtures\\C1\\Http'");
 });
 
-it('lets Identity import the legacy User (C1 control)', function () {
+it('rejects Identity importing App\Models\User now that User has left it (C1 fixture, #33)', function () {
+    $failure = Fixture::rejects(fn () => Rules::compositionRootIsNotImported('Tests\Arch\Fixtures\C1Legacy'));
+
+    expect($failure->getMessage())->toContain("not to use 'Tests\\Arch\\Fixtures\\C1Legacy\\Models'");
+});
+
+it('lets Identity use its own Domain User (C1 control)', function () {
     Rules::compositionRootIsNotImported('Tests\Arch\Fixtures\C1Allowed');
 });
 
@@ -35,13 +41,26 @@ it('keeps the legacy allowlist closed (C2)', function () {
     Rules::legacyAllowlistIsClosed(dirname(__DIR__, 2).'/app');
 });
 
-it('rejects a new legacy model and controller (C2 fixture)', function () {
+it('rejects a new legacy model and controller, and the exited User (C2 fixture)', function () {
     $failure = Fixture::rejects(fn () => Rules::legacyAllowlistIsClosed(__DIR__.'/Fixtures/C2'));
 
     expect($failure->getMessage())->toContain('Models/Vendor.php')
         ->toContain('Http/Controllers/CartController.php')
-        ->not->toContain('Models/User.php')
+        // User left the allowlist when it moved to Identity\Domain (#33).
+        ->toContain('Models/User.php')
         ->not->toContain('Http/Controllers/Controller.php');
+});
+
+it('has removed App\Models\User (ADR-0010 §2b exit, #33)', function () {
+    expect(class_exists('App\Models\User'))->toBeFalse()
+        ->and(is_dir(dirname(__DIR__, 2).'/app/Models'))->toBeFalse();
+});
+
+it('keeps the composition root off Identity\Domain\User (ADR-0010 §2a)', function () {
+    // compositionRootOnlyRegisters covers every module's Domain; this names
+    // the class that moved, so a regression points at it.
+    expect('App\Providers')->not->toUse('App\Modules\Identity\Domain\User');
+    expect('App\Http')->not->toUse('App\Modules\Identity\Domain\User');
 });
 
 it('keeps the module tree canonical (C3)', function () {
