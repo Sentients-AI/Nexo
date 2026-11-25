@@ -207,7 +207,7 @@ This decision should be documented in a new ADR explaining the divergence from A
 
 ## 11. Implementation status (Story #1)
 
-Sections 1–10 are the approved design and are not changed here. This section records how Story #1 implemented it.
+Sections 1–10 are the approved design and are not changed here. This section records how Story #1 implemented it, and how #35 added audited orchestration on top.
 
 | Concern | Implementation | Enforced by |
 |---|---|---|
@@ -216,7 +216,8 @@ Sections 1–10 are the approved design and are not changed here. This section r
 | Valid status | `vendors_status_check` on a binary-collated column, default `pending` | The database |
 | Lifecycle (§4) | `VendorLifecycle`: approve, suspend, reactivate, each a conditional update on the expected status (INV-14) | L4 (`VendorStatusWriteRule`); `VendorLifecycleTest`, `VendorLifecycleConcurrencyTest` |
 | Creation (§5) | `Vendors\Application\CreateVendor::handle(name, slug)` creates the Vendor in `pending` and does nothing else | L8 (`VendorCreationRule`); `CreateVendorTest` |
-| Operator command | `php artisan vendors:create {slug} {name}`, which calls `CreateVendor` | `CreateVendorCommandTest` |
+| Audited operations (#35) | `RegisterVendor`, `ApproveVendor`, `SuspendVendor`, `ReactivateVendor` in `Vendors\Application`: each change and its `audit_log` record commit or roll back together (INV-19, ADR-0023) | L9 (`VendorOrchestrationRule`); `RegisterVendorTest`, `AuditedLifecycleTest`, `AuditedVendorRetryTest`, `AuditedVendorConcurrencyTest` |
+| Operator command | `php artisan vendors:create {slug} {name}`, which calls `RegisterVendor` with a console actor | `CreateVendorCommandTest` |
 | Operating eligibility (§6, §8) | `VendorStatus::canOperate()` and `Vendor::canOperate()`: true only for `approved` | `VendorStatusTest`, `VendorModelTest` |
 
 ### Creation rules (#29, owner decisions D1, D2)
@@ -227,13 +228,35 @@ Sections 1–10 are the approved design and are not changed here. This section r
 - An equivalent slug already in use throws `VendorSlugAlreadyExists`. Only a violation of `vendors_slug_unique` is translated; every other database error propagates. There is no lookup before the insert, so two concurrent creations of one slug cannot both succeed.
 - `vendors:create` exits 0 on success, 2 for an invalid slug or name, and 1 for a duplicate slug or a refused production confirmation.
 
+### Audited operations (#35)
+
+- **The four operations.** `RegisterVendor::handle(Actor, name, slug): Vendor` and `ApproveVendor`, `SuspendVendor` and `ReactivateVendor`, each `handle(Actor, int $vendorId): Vendor`. They reuse `CreateVendor` and `VendorLifecycle` unchanged: validation, the duplicate-slug translation, the guarded conditional updates and their exceptions are theirs.
+- **Audit records.** Subject type `vendor`, subject id the Vendor's id.
+
+  | Operation | Action | `before` | `after` |
+  |---|---|---|---|
+  | Register | `vendor.created` | SQL NULL | `{slug, name, status}` |
+  | Approve | `vendor.approved` | `{status: pending}` | `{status: approved}` |
+  | Suspend | `vendor.suspended` | `{status: approved}` | `{status: suspended}` |
+  | Reactivate | `vendor.reactivated` | `{status: suspended}` | `{status: approved}` |
+
+  The vocabulary was chosen by the owner for #35. Snapshots are explicit, minimal attribute maps, never a serialised model.
+- **Authoritative snapshots (ADR-0023 amendment B).** A lifecycle orchestrator takes a Vendor id, never a caller's model. Inside its transaction it loads the row with `lockForUpdate()`, takes `before` from it, calls the lifecycle, and reads `after` from the row as written. `RegisterVendor` reads `after` back from the inserted row. The audit insert comes last (ADR-0011 lock order).
+- **Transactions (ADR-0011 Decision 10).** Each runs `DB::transaction(..., 3)` on the default connection, which the recorder also uses.
+  - As the outermost transaction, it owns the transaction and retries a deadlock (1213) or lock-wait timeout (1205) up to three attempts in all. Each attempt reloads and relocks the row, builds a new model and new snapshots, and reuses nothing from a failed attempt.
+  - Inside a caller's transaction it runs in a savepoint and does not retry: Laravel rolls back the savepoint and rethrows the concurrency error as `DeadlockException`, so the caller's outermost transaction decides and retries.
+  - Domain refusals (`InvalidVendorDetails`, `VendorSlugAlreadyExists`, `InvalidVendorTransition`, a missing Vendor) and other errors are never retried. An audit insert failure propagates and rolls the change back. Nothing outside the database happens inside the transaction.
+- **Console provenance.** `vendors:create` records a `console` actor labelled `vendors:create`: which code path made the change, not who ran it (ADR-0023 Decision 2). It has no option that names a person.
+- **Bypass detection.** L9 allows each protected operation only in its orchestrator's `handle()`. With L4 and L8, every status write and creation those rules can see is audited. The blind spots of all three are listed in `dependency-rules.md` §1.
+- **Concurrency.** Two or four worker processes running one transition, or one registration of a slug, give exactly one success and exactly one audit record. The others are refused with the domain exception, with no exhausted retries.
+
 ### Operating eligibility
 
 `canOperate()` answers from the status alone, because no other marketplace condition exists yet. Approval is required but, per §6, not necessarily sufficient: a later condition is added to `Vendor::canOperate()`, which then stops being a function of status only. Nothing enforces eligibility yet, because the features it will gate (products, orders) do not exist.
 
 ### Known limitations
 
-- **No authentication or authorisation.** `CreateVendor`, `VendorLifecycle` and `vendors:create` do not check who calls them. No operator identity exists: ADR-0011 was accepted on 2026-11-24 but is not implemented. Anyone who can run Artisan on a server can create a Vendor. In production the command asks for confirmation, or needs `--force`, but that is a guard against mistakes, not access control.
-- **No audit record.** INV-19 requires an audit record for vendor lifecycle changes, and REQ-VENDOR-MGMT-009 (draft) asks for the same. Story #1 shipped without audit (owner decision D3 of M6.1; #29 D3). `Shared\Audit` and `audit_log` now exist (#34), but neither creation nor the lifecycle transitions call them: they record no actor and write no audit entry. This is open until the audited orchestrators of ADR-0023 Decision 6 (#35).
+- **No authentication or authorisation.** The orchestrators, the primitives and `vendors:create` do not check who calls them, and accepting an `Actor` authenticates nothing. No operator identity exists: ADR-0011 was accepted on 2026-11-24 but is not implemented. Anyone who can run Artisan on a server can create a Vendor. In production the command asks for confirmation, or needs `--force`, but that is a guard against mistakes, not access control.
+- **Audit covers these four operations only.** Creation and the three lifecycle transitions are audited through their orchestrators (#35). Today the only truthful actor is `console`, since no authenticated user exists. A write that bypasses L4, L8 and L9 through one of their blind spots, or raw SQL, is not audited, and the database does not enforce append-only (ADR-0021).
 - **No onboarding.** Applications, rejection (REQ-VENDOR-001, 001A, draft) and the Owner membership created on approval (FR-VEN-02, draft) are not built. Task 4 follows Story #1 (#29 D7).
-- **Guard blind spots.** L4 and L8 see only statically known code. Their blind spots are listed in `dependency-rules.md` §1.
+- **Guard blind spots.** L4, L8 and L9 see only statically known code. Their blind spots are listed in `dependency-rules.md` §1.
