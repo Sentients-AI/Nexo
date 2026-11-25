@@ -192,12 +192,18 @@ it('rejects a malformed action, subject type or subject id before writing', func
     'negative subject id' => [fn () => recordConsoleAudit('vendor.created', -3), 'An audit subject id must be a positive id, got -3.'],
 ]);
 
-it('rejects a snapshot that is not JSON-encodable before writing', function (): void {
-    expect(fn () => app(AuditRecorder::class)->record(Actor::console('vendors:create'), 'vendor.created', 'vendor', 1, null, ['name' => "\xB1\x31"]))
+it('rejects a snapshot that is not JSON-encodable before writing', function (?array $before, ?array $after): void {
+    expect(fn () => app(AuditRecorder::class)->record(Actor::console('vendors:create'), 'vendor.created', 'vendor', 1, $before, $after))
         ->toThrow(JsonException::class);
 
     expect(DB::table('audit_log')->count())->toBe(0);
-});
+})->with([
+    'invalid UTF-8 after' => [null, ['name' => "\xB1\x31"]],
+    'invalid UTF-8 before' => [['name' => "\xB1\x31"], null],
+    'nested invalid UTF-8' => [null, ['tags' => ['ok', "\xC3\x28"]]],
+    'infinity' => [null, ['rate' => INF]],
+    'not a number' => [['rate' => NAN], null],
+]);
 
 it('offers record() and nothing else', function (): void {
     $methods = array_map(
