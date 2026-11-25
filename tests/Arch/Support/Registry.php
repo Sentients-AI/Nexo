@@ -2,6 +2,10 @@
 
 namespace Tests\Arch\Support;
 
+use Tests\Arch\PHPStan\AuditLogMutationRule;
+use Tests\Arch\PHPStan\VendorCreationRule;
+use Tests\Arch\PHPStan\VendorStatusWriteRule;
+
 /**
  * The machine-readable module registry (ADR-0010 §7). DriftTest keeps it equal
  * to docs/architecture/dependency-rules.md and domain-context-map.md, so a
@@ -55,5 +59,28 @@ final class Registry
         'M6' => 'ADR-0017 accepted and the first integration event',
         'F2' => 'First typed page contract',
         'F3' => 'First page that renders server money',
+    ];
+
+    /**
+     * The rules of dependency-rules.md §1 enforced by a PHPStan rule, each
+     * registered in phpstan.neon.dist.
+     *
+     * @var array<string, class-string>
+     */
+    public const PHPSTAN_RULES = [
+        'L4' => VendorStatusWriteRule::class,
+        'L8' => VendorCreationRule::class,
+        'L10' => AuditLogMutationRule::class,
+    ];
+
+    /**
+     * Rules that are decided but not implemented, with the task each lands
+     * with (dependency-rules.md §7). Nothing enforces them yet.
+     *
+     * @var array<string, string>
+     */
+    public const PLANNED = [
+        'L9' => 'Audited Vendor orchestration task',
+        'L11' => 'Membership foundation task',
     ];
 }

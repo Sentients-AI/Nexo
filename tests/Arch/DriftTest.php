@@ -58,3 +58,32 @@ it('has the deferred rules and triggers of dependency-rules.md §6', function ()
 
     expect($deferred)->toBe(Registry::DEFERRED);
 });
+
+it('has the PHPStan-enforced rules of dependency-rules.md §1, each registered', function () {
+    $enforced = [];
+
+    foreach (MarkdownTable::rowsAfter('docs/architecture/dependency-rules.md', '## 1. Layer rules') as $row) {
+        if (preg_match('/PHPStan rule `([^`]+)`/', $row[2] ?? '', $class) === 1) {
+            $enforced[$row[0]] = $class[1];
+        }
+    }
+
+    expect($enforced)->toBe(Registry::PHPSTAN_RULES);
+
+    $config = (string) file_get_contents(dirname(__DIR__, 2).'/phpstan.neon.dist');
+
+    foreach (Registry::PHPSTAN_RULES as $rule) {
+        expect($config)->toMatch('/^\s*-\s*'.preg_quote($rule, '/').'\s*$/m');
+    }
+});
+
+it('has the planned rules of dependency-rules.md §7, none of them enforced', function () {
+    $planned = [];
+
+    foreach (MarkdownTable::rowsAfter('docs/architecture/dependency-rules.md', '## 7. Planned rules') as $row) {
+        $planned[$row[0]] = $row[3];
+    }
+
+    expect($planned)->toBe(Registry::PLANNED)
+        ->and(array_intersect_key($planned, Registry::PHPSTAN_RULES))->toBe([]);
+});
