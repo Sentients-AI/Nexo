@@ -77,14 +77,25 @@ it('refuses a duplicate slug and leaves the existing vendor alone', function ():
 it('warns in production and creates nothing when it cannot ask', function (): void {
     app()->detectEnvironment(fn (): string => 'production');
 
-    $exitCode = Artisan::call('vendors:create', ['slug' => 'acme-supplies', 'name' => 'Acme Supplies', '--no-interaction' => true]);
+    // The alert box wraps its text to the terminal's width, which Symfony reads
+    // from COLUMNS. Fix it wide enough for one line, then restore it exactly:
+    // unset stays unset, and a set value comes back.
+    $columns = getenv('COLUMNS');
+    putenv('COLUMNS=200');
+
+    try {
+        $exitCode = Artisan::call('vendors:create', ['slug' => 'acme-supplies', 'name' => 'Acme Supplies', '--no-interaction' => true]);
+    } finally {
+        putenv($columns === false ? 'COLUMNS' : 'COLUMNS='.$columns);
+    }
 
     expect($exitCode)->toBe(Command::FAILURE)
         // The production alert prints its warning in capitals.
         ->and(Artisan::output())->toContain('THIS CREATES A VENDOR WITHOUT AUTHENTICATION; THE AUDIT LOG RECORDS THE COMMAND, NOT WHO RAN IT.')
         ->toContain('Command cancelled.')
         ->and(DB::table('vendors')->count())->toBe(0)
-        ->and(commandAuditRows())->toBe([]);
+        ->and(commandAuditRows())->toBe([])
+        ->and(getenv('COLUMNS'))->toBe($columns);
 });
 
 it('creates in production with --force, without asking', function (): void {
