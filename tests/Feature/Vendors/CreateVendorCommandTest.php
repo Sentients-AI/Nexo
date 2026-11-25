@@ -8,11 +8,18 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Command\Command;
 
 /*
- * #29, D6: vendors:create is the operator's console entry to CreateVendor. It
- * reports the use case's rules and refusals with distinct exit codes, says
- * plainly that it is neither authenticated nor audited, and asks before
- * creating in production.
+ * #29, D6; #35: vendors:create is the operator's console entry to
+ * RegisterVendor. It reports the use case's rules and refusals with distinct
+ * exit codes, records each creation with a console actor named after the
+ * command (provenance, never a person), says plainly that it is not
+ * authenticated, and asks before creating in production.
  */
+
+/** @return list<array<string, mixed>> */
+function commandAuditRows(): array
+{
+    return DB::table('audit_log')->get()->map(fn (object $row): array => (array) $row)->all();
+}
 
 it('creates a pending vendor and says it cannot operate yet', function (): void {
     $this->artisan('vendors:create', ['slug' => 'acme-supplies', 'name' => 'Acme Supplies'])
@@ -25,6 +32,14 @@ it('creates a pending vendor and says it cannot operate yet', function (): void 
         ->and($row?->slug)->toBe('acme-supplies')
         ->and($row?->name)->toBe('Acme Supplies')
         ->and($row?->status)->toBe('pending');
+
+    $audit = commandAuditRows();
+
+    expect($audit)->toHaveCount(1)
+        ->and([$audit[0]['actor_type'], $audit[0]['actor_user_id'], $audit[0]['impersonator_user_id'], $audit[0]['actor_label'], $audit[0]['ip']])
+        ->toBe(['console', null, null, 'vendors:create', null])
+        ->and([$audit[0]['action'], $audit[0]['subject_type'], $audit[0]['subject_id']])->toBe(['vendor.created', 'vendor', $row?->id])
+        ->and($audit[0]['before'])->toBeNull();
 });
 
 it('refuses an invalid slug or name with the rule, and creates nothing', function (string $slug, string $name, string $rule): void {
@@ -32,7 +47,8 @@ it('refuses an invalid slug or name with the rule, and creates nothing', functio
         ->expectsOutputToContain($rule)
         ->assertExitCode(Command::INVALID);
 
-    expect(DB::table('vendors')->count())->toBe(0);
+    expect(DB::table('vendors')->count())->toBe(0)
+        ->and(commandAuditRows())->toBe([]);
 })->with([
     'uppercase slug' => ['Acme', 'Acme Supplies', 'The vendor slug must be 3 to 80 characters'],
     'consecutive hyphens' => ['acme--supplies', 'Acme Supplies', 'The vendor slug must be 3 to 80 characters'],
@@ -46,7 +62,8 @@ it('refuses a duplicate slug and leaves the existing vendor alone', function ():
         ->expectsOutputToContain('A vendor with this slug already exists.')
         ->assertExitCode(Command::FAILURE);
 
-    expect(DB::table('vendors')->pluck('name')->all())->toBe(['Acme Supplies']);
+    expect(DB::table('vendors')->pluck('name')->all())->toBe(['Acme Supplies'])
+        ->and(commandAuditRows())->toHaveCount(1);
 });
 
 /*
@@ -64,9 +81,10 @@ it('warns in production and creates nothing when it cannot ask', function (): vo
 
     expect($exitCode)->toBe(Command::FAILURE)
         // The production alert prints its warning in capitals.
-        ->and(Artisan::output())->toContain('THIS CREATES A VENDOR WITHOUT AUTHENTICATION OR AN AUDIT RECORD.')
+        ->and(Artisan::output())->toContain('THIS CREATES A VENDOR WITHOUT AUTHENTICATION; THE AUDIT LOG RECORDS THE COMMAND, NOT WHO RAN IT.')
         ->toContain('Command cancelled.')
-        ->and(DB::table('vendors')->count())->toBe(0);
+        ->and(DB::table('vendors')->count())->toBe(0)
+        ->and(commandAuditRows())->toBe([]);
 });
 
 it('creates in production with --force, without asking', function (): void {
@@ -76,12 +94,20 @@ it('creates in production with --force, without asking', function (): void {
         ->doesntExpectOutputToContain('Command cancelled.')
         ->assertExitCode(Command::SUCCESS);
 
-    expect(DB::table('vendors')->count())->toBe(1);
+    expect(DB::table('vendors')->count())->toBe(1)
+        ->and(commandAuditRows())->toHaveCount(1);
 });
 
-it('does not present itself as an authenticated or audited interface', function (): void {
+it('presents itself as audited console provenance, not an authenticated interface', function (): void {
     $command = Artisan::all()['vendors:create'] ?? null;
 
     expect($command)->toBeInstanceOf(CreateVendorCommand::class)
-        ->and($command?->getDescription())->toContain('not authenticated or audited');
+        ->and($command?->getDescription())->toContain('audited as console provenance, not authenticated');
+});
+
+it('keeps its arguments and offers no way to claim an identity', function (): void {
+    $definition = (Artisan::all()['vendors:create'] ?? null)?->getDefinition();
+
+    expect(array_keys($definition?->getArguments() ?? []))->toBe(['slug', 'name'])
+        ->and(array_keys($definition?->getOptions() ?? []))->toBe(['force']);
 });
