@@ -91,7 +91,7 @@ it('warns in production and creates nothing when it cannot ask', function (): vo
 
     expect($exitCode)->toBe(Command::FAILURE)
         // The production alert prints its warning in capitals.
-        ->and(Artisan::output())->toContain('THIS CREATES A VENDOR WITHOUT AUTHENTICATION; THE AUDIT LOG RECORDS THE COMMAND, NOT WHO RAN IT.')
+        ->and(Artisan::output())->toContain('NO AUTHENTICATION. AUDIT IDENTIFIES THE COMMAND, NOT THE OPERATOR.')
         ->toContain('Command cancelled.')
         ->and(DB::table('vendors')->count())->toBe(0)
         ->and(commandAuditRows())->toBe([])

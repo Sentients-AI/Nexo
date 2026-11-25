@@ -36,7 +36,7 @@ final class CreateVendorCommand extends Command
 
     public function handle(RegisterVendor $registerVendor): int
     {
-        if (! $this->confirmToProceed('This creates a Vendor without authentication; the audit log records the command, not who ran it.')) {
+        if (! $this->confirmToProceed('No authentication. Audit identifies the command, not the operator.')) {
             return self::FAILURE;
         }
 
