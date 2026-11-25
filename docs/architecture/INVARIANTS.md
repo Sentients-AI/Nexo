@@ -158,7 +158,11 @@ One implementation is used by the storefront, search indexing and checkout.
 
 - **Enforcement:** explicit audited orchestrators writing through `App\Shared\Audit` in the change's transaction (ADR-0023), with the planned rules L9 and L10.
 - **Ratified:** owner, 2026-11-24 (OD-3). Vendor creation (OD-5) and membership and platform-role changes (OD-6) were added on ratification.
-- **Implementation status (2026-11-24):** not implemented. No audit log exists. `CreateVendor`, `VendorLifecycle` and `vendors:create` write no audit record (`vendor-domain-design.md` §11).
+- **Implementation status (#34, 2026-11-25):** partly implemented. The audit infrastructure exists; no listed action is audited yet.
+  - **Exists and is proven on MySQL:** `App\Shared\Audit` (`ActorType`, `Actor`, `AuditRecorder`, `AuditOutsideTransaction`) and the `audit_log` table of ADR-0023 Decision 3, with its three named CHECK constraints on the actor's shape. `AuditRecorder::record()` writes one row on the default connection, only inside a transaction open on that same connection. It never begins, ends or retries a transaction and never suppresses a failed insert, so a record commits or rolls back with the caller's change, including a savepoint rollback and an audit insert failure (`tests/Feature/Audit/`, `tests/Concurrency/AuditRecorderTransactionTest.php`).
+  - **Not yet implemented:** no business operation writes an audit record. `CreateVendor`, `VendorLifecycle` and `vendors:create` still write none, and the audited Vendor orchestrators, their authoritative snapshots (ADR-0023 Decision 5) and L9 are #35. Membership, platform-role and the other listed actions follow with their own use cases. The recorder alone does not guarantee that any operation is audited.
+  - **Actor.** No authenticated identity exists, so only `console` and `system` actors can truthfully be recorded today. A console row records the command, not who ran it. Building an `Actor` authenticates nothing.
+  - **Append-only** is an application convention enforced statically by L10, planned at ratification and enforced since #34 (`dependency-rules.md` §1), with the blind spots listed there: SQL or table names in variables, a builder held in a variable, joins, container resolution and code outside PHPStan's paths. The database does not enforce it: the application's database user can still update or delete rows. Revoking those privileges is deferred to deployment (ADR-0021).
 
 **INV-20 · Environment isolation.**
 
