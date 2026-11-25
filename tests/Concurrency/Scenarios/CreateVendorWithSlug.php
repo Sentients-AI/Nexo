@@ -31,7 +31,9 @@ final class CreateVendorWithSlug implements Scenario
         $name = "Acme Worker {$worker}";
 
         try {
-            $vendor = (new CreateVendor)->handle($name, (string) $arguments['slug']);
+            // The primitive's own concurrency proof (Story #1); the audited path is
+            // proven through RegisterVendor in RunAuditedVendorOperation.
+            $vendor = (new CreateVendor)->handle($name, (string) $arguments['slug']); // @phpstan-ignore nexo.vendorOrchestration
         } catch (VendorSlugAlreadyExists $exception) {
             $previous = $exception->getPrevious();
 

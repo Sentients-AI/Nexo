@@ -4,6 +4,7 @@ namespace Tests\Arch\Support;
 
 use Tests\Arch\PHPStan\AuditLogMutationRule;
 use Tests\Arch\PHPStan\VendorCreationRule;
+use Tests\Arch\PHPStan\VendorOrchestrationRule;
 use Tests\Arch\PHPStan\VendorStatusWriteRule;
 
 /**
@@ -70,6 +71,7 @@ final class Registry
     public const PHPSTAN_RULES = [
         'L4' => VendorStatusWriteRule::class,
         'L8' => VendorCreationRule::class,
+        'L9' => VendorOrchestrationRule::class,
         'L10' => AuditLogMutationRule::class,
     ];
 
@@ -80,7 +82,6 @@ final class Registry
      * @var array<string, string>
      */
     public const PLANNED = [
-        'L9' => 'Audited Vendor orchestration task',
         'L11' => 'Membership foundation task',
     ];
 }

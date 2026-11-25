@@ -32,5 +32,7 @@ rules:
     - Tests\Arch\PHPStan\VendorStatusWriteRule
     # L8: only CreateVendor creates a Vendor.
     - Tests\Arch\PHPStan\VendorCreationRule
+    # L9: only the audited orchestrators call CreateVendor::handle() and the lifecycle transitions.
+    - Tests\Arch\PHPStan\VendorOrchestrationRule
     # L10: audit_log is append-only; AuditRecorder's insert is its only write.
     - Tests\Arch\PHPStan\AuditLogMutationRule
