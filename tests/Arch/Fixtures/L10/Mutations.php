@@ -6,8 +6,9 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Violates L10: audit_log rows changed or removed. Analysed by
- * AuditLogMutationRuleTest only, never executed. Each reported line is marked.
+ * Violates L10: audit_log rows inserted outside AuditRecorder::record(),
+ * changed or removed. Analysed by AuditLogMutationRuleTest only, never
+ * executed. Each reported line is marked.
  */
 final class Mutations
 {
@@ -54,6 +55,32 @@ final class Mutations
 
         $subject->auditEntries()->delete(); // violation
         $subject->auditEntries()->update(['action' => 'vendor.approved']); // violation
+    }
+
+    public function insertions(AuditEntry $entry, AuditedSubject $subject): void
+    {
+        DB::table('audit_log')->insert(['action' => 'vendor.created']); // violation
+        DB::table('audit_log')->insertGetId(['action' => 'vendor.created']); // violation
+        DB::table('audit_log')->insertOrIgnore(['action' => 'vendor.created']); // violation
+        DB::table('audit_log')->insertUsing(['action'], DB::table('vendors')->select('name')); // violation
+        DB::table('audit_log')->insertOrIgnoreUsing(['action'], DB::table('vendors')->select('name')); // violation
+        DB::connection()->table('audit_log as a')->insert(['action' => 'vendor.created']); // violation
+
+        AuditEntry::create(['action' => 'vendor.created']); // violation
+        AuditEntry::forceCreate(['action' => 'vendor.created']); // violation
+        AuditEntry::insert(['action' => 'vendor.created']); // violation
+        AuditEntry::query()->firstOrCreate(['action' => 'vendor.created']); // violation
+        AuditEntry::query()->createOrFirst(['action' => 'vendor.created']); // violation
+        AuditEntry::query()->createMany([['action' => 'vendor.created']]); // violation
+        AuditEntry::query()->fillAndInsert([['action' => 'vendor.created']]); // violation
+
+        $subject->auditEntries()->create(['action' => 'vendor.created']); // violation
+        $subject->auditEntries()->save($entry); // violation
+        $subject->auditEntries()->saveMany([$entry]); // violation
+
+        DB::insert("INSERT INTO audit_log (action) VALUES ('vendor.created')"); // violation
+        DB::statement('INSERT INTO `audit_log` (action) SELECT name FROM vendors'); // violation
+        DB::connection()->insert('insert into audit_log (action) values (?)', ['vendor.created']); // violation
     }
 
     public function sql(Connection $connection): void

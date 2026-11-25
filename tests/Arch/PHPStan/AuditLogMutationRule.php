@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Arch\PHPStan;
 
+use App\Shared\Audit\AuditRecorder;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
@@ -26,33 +28,40 @@ use PHPStan\Type\Type;
 use PHPStan\Type\TypeCombinator;
 
 /**
- * Rule L10 (dependency-rules.md §1; ADR-0023 Decision 8): audit_log is
- * append-only. AuditRecorder's insert is its only write, and nothing,
- * App\Shared\Audit included, changes or removes a row. There is no exemption:
- * the recorder passes because it only inserts. It reports, anywhere:
+ * Rule L10 (dependency-rules.md §1; ADR-0023 Decision 8, "The recorder's
+ * single insert is the only allowed write"): audit_log is append-only, and
+ * AuditRecorder::record() is the only code that inserts into it. It reports,
+ * anywhere in PHPStan's paths, App\Shared\Audit included:
  *
- * - a mutating method (MUTATING_METHODS: update, delete, truncate, upsert,
- *   updateOrInsert, updateOrCreate, increment, decrement, save, forceDelete,
- *   …) called on an audit model, on `AuditModel::`, on an Eloquent builder or
- *   relation of an audit model, or on a query builder whose chain starts from
- *   the `audit_log` table (`table()`/`from()`, an `as` alias included) or from
- *   one of those (`toBase()`, `getQuery()`);
+ * - a writing method called on an audit model, on `AuditModel::`, on an
+ *   Eloquent builder or relation of an audit model, or on a query builder
+ *   whose chain starts from the `audit_log` table (`table()`/`from()`, an
+ *   `as` alias included) or from one of those (`toBase()`, `getQuery()`).
+ *   Writing methods change or remove rows (MUTATING_METHODS: update, delete,
+ *   truncate, upsert, updateOrInsert, updateOrCreate, increment, decrement,
+ *   save, forceDelete, …) or insert them (INSERTING_METHODS: insert,
+ *   insertGetId, insertOrIgnore, insertUsing, fillAndInsert, create,
+ *   forceCreate, createMany, firstOrCreate, createOrFirst, saveMany, …);
  * - constant SQL passed to a connection's or the DB facade's statement(),
  *   unprepared(), affectingStatement(), update(), delete() or insert() that
- *   names audit_log and contains UPDATE, DELETE, TRUNCATE or REPLACE outside
- *   string literals (so `INSERT … ON DUPLICATE KEY UPDATE` is reported, and
- *   `FOR UPDATE` is not).
+ *   names audit_log and contains INSERT, UPDATE, DELETE, TRUNCATE or REPLACE
+ *   outside string literals (`FOR UPDATE` excepted).
+ *
+ * The one exemption is exact: a plain `insert()` on a query builder over
+ * audit_log, written directly in the body of AuditRecorder::record(), not in
+ * a closure. Every other write there is reported, as is any insert in
+ * another AuditRecorder method or in any other class.
  *
  * An audit model is an Eloquent model whose `$table` property defaults to
  * `audit_log`. None exists: the recorder writes through the query builder.
- *
- * Insertion is not reported anywhere: an insert adds a row and changes none.
- * Constant mutating SQL that names audit_log is reported even when it only
+ * Constant writing SQL that names audit_log is reported even when it only
  * reads the table (`UPDATE vendors … (SELECT … FROM audit_log)`).
  *
- * It sees only what is statically known. Not reported: a table name or SQL
+ * It sees only what is statically known. Not reported: a second plain
+ * insert() in the body of record() (the exemption is by place, not count);
+ * a table name or SQL
  * held in a variable or built at run time; a query builder held in a
- * variable or property before the mutating call, since its type does not
+ * variable or property before the writing call, since its type does not
  * carry its table (an audit model's Eloquent builder does, and is reported);
  * a join onto audit_log from another table; a schema-qualified or quoted
  * table name (`nexo.audit_log`) in the builder; a model whose table is set at
@@ -81,6 +90,19 @@ final class AuditLogMutationRule implements Rule
         'save', 'saveQuietly', 'saveOrFail', 'push', 'pushQuietly', 'touch', 'touchQuietly', 'restore', 'restoreQuietly',
     ];
 
+    /**
+     * Builder, relation and model methods that insert rows, as Laravel 13
+     * names them. save(), saveQuietly(), saveOrFail() and incrementOrCreate(),
+     * which may insert too, are in MUTATING_METHODS.
+     */
+    private const INSERTING_METHODS = [
+        'insert', 'insertGetId', 'insertOrIgnore', 'insertUsing', 'insertOrIgnoreUsing', 'insertOrIgnoreReturning',
+        'fillAndInsert', 'fillAndInsertGetId', 'fillAndInsertOrIgnore',
+        'create', 'createQuietly', 'createMany', 'createManyQuietly', 'createOrFirst', 'createOrRestore', 'firstOrCreate',
+        'forceCreate', 'forceCreateQuietly', 'forceCreateMany', 'forceCreateManyQuietly',
+        'saveMany', 'saveManyQuietly', 'saveOrIgnore',
+    ];
+
     /** Connection methods that run the SQL they are given. */
     private const SQL_METHODS = ['statement', 'unprepared', 'affectingStatement', 'update', 'delete', 'insert'];
 
@@ -94,25 +116,25 @@ final class AuditLogMutationRule implements Rule
      */
     public function processNode(Node $node, Scope $scope): array
     {
-        if (! $this->mutatesAuditLog($node, $scope)) {
+        if (! $this->writesAuditLog($node, $scope)) {
             return [];
         }
 
         return [
             RuleErrorBuilder::message(
-                'audit_log is append-only: only App\Shared\Audit\AuditRecorder inserts into it, and nothing updates, deletes, truncates, upserts or replaces its rows (dependency-rules.md L10).',
+                'audit_log is append-only: only App\Shared\Audit\AuditRecorder::record() inserts into it, and nothing updates, deletes, truncates, upserts or replaces its rows (dependency-rules.md L10).',
             )->identifier(self::IDENTIFIER)->build(),
         ];
     }
 
-    private function mutatesAuditLog(Expr $node, Scope $scope): bool
+    private function writesAuditLog(Expr $node, Scope $scope): bool
     {
         // A nullsafe call is analysed as a MethodCall too, so it is matched once, here.
         if ($node instanceof MethodCall && $node->name instanceof Identifier) {
             $method = $node->name->toString();
 
-            if (in_array($method, self::MUTATING_METHODS, true) && $this->receivesAuditLogWrites($node->var, $scope)) {
-                return true;
+            if ($this->isWritingMethod($method) && $this->receivesAuditLogWrites($node->var, $scope)) {
+                return ! $this->isRecorderInsert($node, $method, $scope);
             }
 
             return in_array($method, self::SQL_METHODS, true)
@@ -124,7 +146,7 @@ final class AuditLogMutationRule implements Rule
             $method = $node->name->toString();
             $class = $scope->resolveName($node->class);
 
-            if (in_array($method, self::MUTATING_METHODS, true) && $this->isAuditModel(new ObjectType($class))) {
+            if ($this->isWritingMethod($method) && $this->isAuditModel(new ObjectType($class))) {
                 return true;
             }
 
@@ -134,6 +156,24 @@ final class AuditLogMutationRule implements Rule
         }
 
         return false;
+    }
+
+    private function isWritingMethod(string $method): bool
+    {
+        return in_array($method, self::MUTATING_METHODS, true) || in_array($method, self::INSERTING_METHODS, true);
+    }
+
+    /**
+     * The exemption: a plain insert() on a query builder, written directly in
+     * the body of AuditRecorder::record(), not in a closure inside it.
+     */
+    private function isRecorderInsert(MethodCall $node, string $method, Scope $scope): bool
+    {
+        return $method === 'insert'
+            && $scope->getClassReflection()?->getName() === AuditRecorder::class
+            && $scope->getFunctionName() === 'record'
+            && ! $scope->isInAnonymousFunction()
+            && (new ObjectType(QueryBuilder::class))->isSuperTypeOf($scope->getType($node->var))->yes();
     }
 
     /** The receiver writes to audit_log: an audit model, its builder or relation, or a query on the table. */
@@ -221,7 +261,7 @@ final class AuditLogMutationRule implements Rule
             $statement = preg_replace(['/\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*"/s', '/\bfor\s+update\b/i'], ["''", ''], $string->getValue()) ?? '';
 
             if (preg_match('/(?<![\w$])`?'.self::TABLE.'`?(?![\w$])/i', $statement) === 1
-                && preg_match('/\b(?:update|delete|truncate|replace)\b/i', $statement) === 1
+                && preg_match('/\b(?:insert|update|delete|truncate|replace)\b/i', $statement) === 1
             ) {
                 return true;
             }
