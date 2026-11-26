@@ -23,9 +23,13 @@ use Illuminate\Support\Facades\DB;
  * the transaction and retries a deadlock or lock-wait timeout up to
  * ATTEMPTS times in all; each attempt starts again from the input. Inside a
  * caller's transaction it runs in a savepoint and does not retry: a
- * concurrency error rolls back the savepoint and reaches the caller as
- * Illuminate\Database\DeadlockException, for the outermost transaction to
- * retry. A refusal (invalid details, duplicate slug) is never retried.
+ * concurrency error propagates to the caller as
+ * Illuminate\Database\DeadlockException, and the owner of the outermost
+ * transaction handles it and retries. Laravel attempts to roll back the
+ * savepoint, but a real MySQL deadlock (1213) has already rolled back the
+ * entire transaction, so the caller's transaction is not guaranteed to be
+ * usable afterwards. A refusal (invalid details, duplicate slug) is never
+ * retried.
  *
  * The actor is recorded as given. Accepting an Actor authenticates and
  * authorises nothing: callers must authorise first.
