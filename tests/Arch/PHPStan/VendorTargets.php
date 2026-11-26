@@ -27,14 +27,14 @@ final class VendorTargets
     private const TABLE = 'vendors';
 
     /** The receiver writes to vendors: a Vendor, its Eloquent builder, or a query on the table. */
-    public static function receivesVendorWrites(Expr $receiver, Scope $scope): bool
+    public static function receivesVendorWrites(Expr $receiver, Scope $scope, string $model = Vendor::class, string $tableName = self::TABLE): bool
     {
         $expr = $receiver;
 
         while (true) {
             $type = $scope->getType($expr);
 
-            if (self::isVendor($type) || self::isVendorBuilder($type)) {
+            if (self::isModel($type, $model) || self::isVendorBuilder($type, $model)) {
                 return true;
             }
 
@@ -44,11 +44,11 @@ final class VendorTargets
             ) {
                 $table = $expr->getArgs()[0] ?? null;
 
-                return $table !== null && self::isConstantString($scope->getType($table->value), self::TABLE);
+                return $table !== null && self::isConstantString($scope->getType($table->value), $tableName);
             }
 
             if ($expr instanceof StaticCall) {
-                return $expr->class instanceof Name && self::isVendor(new ObjectType($scope->resolveName($expr->class)));
+                return $expr->class instanceof Name && self::isModel(new ObjectType($scope->resolveName($expr->class)), $model);
             }
 
             if (! $expr instanceof MethodCall && ! $expr instanceof NullsafeMethodCall) {
@@ -61,18 +61,23 @@ final class VendorTargets
 
     public static function isVendor(Type $type): bool
     {
-        $type = TypeCombinator::removeNull($type);
-
-        return ! $type->isNull()->yes() && (new ObjectType(Vendor::class))->isSuperTypeOf($type)->yes();
+        return self::isModel($type, Vendor::class);
     }
 
-    public static function isVendorBuilder(Type $type): bool
+    private static function isModel(Type $type, string $model): bool
+    {
+        $type = TypeCombinator::removeNull($type);
+
+        return ! $type->isNull()->yes() && (new ObjectType($model))->isSuperTypeOf($type)->yes();
+    }
+
+    public static function isVendorBuilder(Type $type, string $model = Vendor::class): bool
     {
         if (! (new ObjectType(EloquentBuilder::class))->isSuperTypeOf($type)->yes()) {
             return false;
         }
 
-        return self::isVendor($type->getTemplateType(EloquentBuilder::class, 'TModel'));
+        return self::isModel($type->getTemplateType(EloquentBuilder::class, 'TModel'), $model);
     }
 
     public static function isConstantString(Type $type, string $value): bool

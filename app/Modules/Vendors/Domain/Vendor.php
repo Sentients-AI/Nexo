@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * A marketplace seller (ADR-0005). It is created only by CreateVendor
  * (dependency-rules.md L8), and its status changes only through
  * VendorLifecycle (L4) and is not mass assignable.
- * Membership and authorisation are later tasks.
+ * Membership lives in VendorMember.
  *
  * @property int $id
  * @property string $slug

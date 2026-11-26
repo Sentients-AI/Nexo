@@ -80,7 +80,7 @@ it('has the PHPStan-enforced rules of dependency-rules.md §1, each registered',
 it('has the planned rules of dependency-rules.md §7, none of them enforced', function () {
     $planned = [];
 
-    foreach (MarkdownTable::rowsAfter('docs/architecture/dependency-rules.md', '## 7. Planned rules') as $row) {
+    foreach (MarkdownTable::rowsAfter('docs/architecture/dependency-rules.md', '## 7. Planned rules', allowEmpty: true) as $row) {
         $planned[$row[0]] = $row[3];
     }
 

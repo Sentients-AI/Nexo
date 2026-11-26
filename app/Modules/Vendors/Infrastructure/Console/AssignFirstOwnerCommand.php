@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Vendors\Infrastructure\Console;
+
+use App\Modules\Vendors\Application\AssignFirstOwner;
+use App\Shared\Audit\Actor;
+use DomainException;
+use Illuminate\Console\Command;
+use Illuminate\Console\ConfirmableTrait;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+final class AssignFirstOwnerCommand extends Command
+{
+    use ConfirmableTrait;
+
+    protected $signature = 'vendors:assign-first-owner {vendor} {user} {--force : Proceed in production without confirmation}';
+
+    protected $description = 'Change vendor ownership (operator console, audited as console provenance)';
+
+    public function handle(AssignFirstOwner $operation): int
+    {
+        $ids = [];
+        foreach (['vendor', 'user'] as $name) {
+            $argument = $this->argument($name);
+            $id = filter_var($argument, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) {
+                $this->components->error("The {$name} must be a positive integer ID.");
+
+                return self::INVALID;
+            }
+            $ids[] = $id;
+        }
+
+        if (! $this->confirmToProceed('No authentication. Audit identifies the command, not the operator.')) {
+            return self::FAILURE;
+        }
+
+        try {
+            $operation->handle(Actor::console('vendors:assign-first-owner'), $ids[0], $ids[1]);
+        } catch (DomainException|ModelNotFoundException $exception) {
+            $this->components->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->components->info('Vendor ownership updated.');
+
+        return self::SUCCESS;
+    }
+}

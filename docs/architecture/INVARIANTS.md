@@ -17,7 +17,7 @@ Requirement documents cite these as **[INV-n]**.
 - **Enforcement:** the `vendor.context` middleware fails closed; there is no global scope; route bindings are scoped; vendor queries require an explicit `vendorId`.
 - **Proof:** the isolation suite (merge gate), plus an arch test that every vendor controller is covered (ADR-0011).
 - **Ratified:** owner, 2026-11-24 (OD-3).
-- **Implementation status (2026-11-24):** not implemented, not verified. No vendor-owned data or vendor-facing access exists yet. Gate #30 tracks the proof, which applies at each change that introduces vendor-owned data or vendor-facing access (ADR-0011 Decision 9).
+- **Implementation status (#36):** partial. The membership table has explicit ownership and the application refuses cross-vendor membership writes. Vendor context, context-scoped reads and HTTP isolation are pending. Gate #30 remains open.
 
 **INV-2 · Identity.**
 
@@ -27,9 +27,7 @@ Requirement documents cite these as **[INV-n]**.
 - **Enforcement:** `UNIQUE (user_id, active_marker)` on `vendor_members`; the staff exclusion by application guards under ADR-0011's locking protocol (Decision 10).
 - **Proof:** MySQL constraint tests and concurrency tests, plus domain tests.
 - **Ratified:** owner, 2026-11-24 (OD-3), with the active-membership wording above (OD-9).
-- **Implementation status (#33):** not implemented.
-  - Foundations in place: the `users.platform_role` column with its CHECK constraint, and `Identity\Contracts\Users::lockForUpdate()`, whose row lock is proven across processes.
-  - Not built yet, all in #36: the `vendor_members` table, the active-membership constraint, the staff guard and any writer of the role.
+- **Implementation status (#36):** membership uniqueness and staff-member exclusivity are enforced by the schema and audited operations. MySQL schema and worker-process tests prove both. Staff order restrictions remain pending.
 
 ## Orders
 
@@ -135,7 +133,7 @@ One implementation is used by the storefront, search indexing and checkout.
 - Vendors are never physically deleted.
 - **Enforcement:** DB CHECK constraint, the state machine, and `RESTRICT` foreign keys.
 - **Ratified:** owner, 2026-11-24 (OD-3), as worded. It names no proof yet; one is still to be added to this invariant.
-- **Implementation status (2026-11-24):** partly implemented. The `vendors_status_check` constraint and `VendorLifecycle`, guarded by L4, exist and are tested (Story #1). No code path deletes a Vendor. No `RESTRICT` foreign key to `vendors` exists yet, so a Vendor can still be deleted with raw SQL. The first such foreign key arrives with `vendor_members`.
+- **Implementation status (#36):** partly implemented. Vendor status is constrained and the lifecycle is guarded by L4. MySQL restricts deleting vendors referenced by membership history. Raw SQL can still delete an unreferenced vendor.
 
 ## Platform
 
@@ -158,10 +156,10 @@ One implementation is used by the storefront, search indexing and checkout.
 
 - **Enforcement:** explicit audited orchestrators writing through `App\Shared\Audit` in the change's transaction (ADR-0023), with the planned rules L9 and L10.
 - **Ratified:** owner, 2026-11-24 (OD-3). Vendor creation (OD-5) and membership and platform-role changes (OD-6) were added on ratification.
-- **Implementation status (#35, 2026-11-25):** partly implemented. Vendor creation and vendor lifecycle changes are audited and verified; the other listed actions are not.
+- **Implementation status (#36):** partly implemented. Vendor creation, lifecycle, membership and platform-role changes are audited.
   - **Exists and is proven on MySQL:** `App\Shared\Audit` (`ActorType`, `Actor`, `AuditRecorder`, `AuditOutsideTransaction`) and the `audit_log` table of ADR-0023 Decision 3, with its three named CHECK constraints on the actor's shape (#34). `AuditRecorder::record()` writes one row on the default connection, only inside a transaction open on that same connection. It never begins, ends or retries a transaction and never suppresses a failed insert, so a record commits or rolls back with the caller's change (`tests/Feature/Audit/`, `tests/Concurrency/AuditRecorderTransactionTest.php`).
   - **Vendor creation and lifecycle changes (#35):** `RegisterVendor`, `ApproveVendor`, `SuspendVendor` and `ReactivateVendor` write `vendor.created`, `vendor.approved`, `vendor.suspended` and `vendor.reactivated` in the change's transaction, from the locked row, and `vendors:create` goes through `RegisterVendor`. Atomicity, refusals, rollback, savepoints, stale caller models, retries and concurrent workers are proven on MySQL (`vendor-domain-design.md` §11). L9 enforces that no statically visible caller bypasses them.
-  - **Not yet implemented:** membership changes and platform-role changes (OD-6), and the other listed actions, follow with their own use cases. Impersonation does not exist.
+  - **Membership and platform-role changes (#36):** audited in the same transaction after the business write. Feature and concurrency tests cover refusal, audit insert failure, caller rollback, retries and concurrent outcomes. Other listed actions remain pending.
   - **Actor.** No authenticated identity exists, so only `console` and `system` actors can truthfully be recorded today; `vendors:create` records a console actor. A console row records the command, not who ran it. Building an `Actor` authenticates nothing.
   - **Append-only, with one writer.** `AuditRecorder::record()` is the only code that inserts into `audit_log`, and nothing changes or deletes its rows. Both are an application convention enforced statically by L10, planned at ratification and enforced since #34 (`dependency-rules.md` §1), with the blind spots listed there: SQL or table names in variables, a builder held in a variable, joins, container resolution and code outside PHPStan's paths. The database does not enforce it: the application's database user can still insert, update or delete rows. Revoking those privileges is deferred to deployment (ADR-0021).
 
