@@ -35,7 +35,7 @@ The template is [`adr/ADR-TEMPLATE.md`](adr/ADR-TEMPLATE.md) (ADR-0006). Propose
 | [0008](adr/0008-repository-and-frontend-stack.md) | This repository; Vue 3 + Inertia + TS | Accepted (D-1, D-2) |
 | [0009](adr/0009-runtime-and-persistence-baseline.md) | Laravel 13 / PHP 8.5; MySQL 8.4 everywhere, including tests | Accepted (M6-D-02, M6-D-03, 2026-11-14) |
 | [0010](adr/0010-modular-monolith-and-dependency-rules.md) | Modular monolith with enforced contracts | Accepted (M6-D-04, 2026-11-15; two implementation interpretations on the status line, 2026-11-21) |
-| [0011](adr/0011-identity-roles-and-vendor-isolation.md) | Identity, roles and fail-closed vendor isolation | Accepted (owner, 2026-11-24; revised while Proposed the same day; not yet implemented) |
+| [0011](adr/0011-identity-roles-and-vendor-isolation.md) | Identity, roles and fail-closed vendor isolation | Accepted (owner, 2026-11-24; revised while Proposed the same day; not yet implemented); Decision 10 caller-precondition sentence superseded by 0024 |
 | [0012](adr/0012-order-group-and-vendor-orders.md) | OrderGroup + VendorOrder state machines | Proposed |
 | [0013](adr/0013-money-representation-and-allocation.md) | Money: integer minor units, deterministic allocation | Proposed |
 | [0014](adr/0014-inventory-reservations.md) | Inventory: on-hand/reserved, TTL reservations, movement journal | Proposed |
@@ -48,6 +48,6 @@ The template is [`adr/ADR-TEMPLATE.md`](adr/ADR-TEMPLATE.md) (ADR-0006). Propose
 | [0021](adr/0021-environments-demo-data-and-production-isolation.md) | Isolated environments; reproducible demo | Proposed |
 | [0022](adr/0022-redis-valkey-test-platform.md) | Redis contracts proven on an ACL-restricted Valkey in CI | Accepted (owner, 2026-11-17; seven implementation interpretations on the status line, 2026-11-17 to 2026-11-20) |
 | [0023](adr/0023-transactional-audit-record.md) | Append-only audit log, written in the change's transaction by explicit orchestrators | Accepted (owner, 2026-11-24; not yet implemented) |
-| [0024](adr/0024-membership-lock-ownership-and-transaction-boundaries.md) | Membership lock ownership and transaction boundaries | Proposed |
+| [0024](adr/0024-membership-lock-ownership-and-transaction-boundaries.md) | Membership lock ownership and transaction boundaries | Accepted (owner, 2026-11-26) |
 
 Engineering standards that do **not** shape a domain, data-isolation, money, runtime-dependency or deployment boundary live in [`../engineering/`](../engineering/), not in an ADR.

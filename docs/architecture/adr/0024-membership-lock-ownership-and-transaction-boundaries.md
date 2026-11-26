@@ -1,7 +1,7 @@
 # ADR-0024: Membership lock ownership and transaction boundaries
 
 - **Number:** 0024
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-11-26)
 - **Date:** 2026-11-26
 - **Decision owner:** Project owner
 - **Supersedes:** Only the caller-precondition sentence in [ADR-0011 Decision 10](0011-identity-roles-and-vendor-isolation.md#decision) that requires callers of `ActiveMembershipCheck` and membership use cases to already hold the user-row lock in the current transaction.

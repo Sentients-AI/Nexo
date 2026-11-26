@@ -1,7 +1,7 @@
 # ADR-0011: Model identity as one user table with vendor memberships and platform staff roles; enforce vendor isolation by context, policy and test
 
 - **Number:** 0011
-- **Status:** Accepted (owner, 2026-11-24; OD-1), after the revision made while Proposed on 2026-11-24 by owner decisions OD-1 to OD-18 and amendments A to E (see "Revision history"). Accepted is not implemented: no part of this decision is implemented yet.
+- **Status:** Accepted (owner, 2026-11-24; OD-1), after the revision made while Proposed on 2026-11-24 by owner decisions OD-1 to OD-18 and amendments A to E (see "Revision history"). Accepted is not implemented: no part of this decision is implemented yet. The caller-precondition sentence in Decision 10 is superseded by [ADR-0024](0024-membership-lock-ownership-and-transaction-boundaries.md).
 - **Date:** 2026-11-01
 - **Decision owner:** Project owner
 - **Refines:** ADR-0003, which is still accepted: no global scope; explicit vendor scoping

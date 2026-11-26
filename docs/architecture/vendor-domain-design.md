@@ -261,3 +261,11 @@ Sections 1–10 are the approved design and are not changed here. This section r
 - **Audit covers these four operations only.** Creation and the three lifecycle transitions are audited through their orchestrators (#35). Today the only truthful actor is `console`, since no authenticated user exists. A write that bypasses L4, L8 and L9 through one of their blind spots, or raw SQL, is not audited, and the database does not enforce append-only (ADR-0021).
 - **No onboarding.** Applications, rejection (REQ-VENDOR-001, 001A, draft) and the Owner membership created on approval (FR-VEN-02, draft) are not built. Task 4 follows Story #1 (#29 D7).
 - **Guard blind spots.** L4, L8 and L9 see only statically known code. Their blind spots are listed in `dependency-rules.md` §1.
+
+### Membership lock ownership (#36)
+
+[ADR-0024](adr/0024-membership-lock-ownership-and-transaction-boundaries.md) supersedes the caller-precondition sentence in ADR-0011 Decision 10. Public application operations own their transaction boundaries and acquire the locks required by their operation.
+
+- First-owner assignment acquires the user and vendor locks before current membership reads. Staff-role assignment acquires the same user lock before calling the transaction-bound membership port.
+- Ownership transfer and reassignment acquire the vendor lock, then lock the affected active memberships in ascending ID order. Deactivation acquires the vendor and target membership locks. Staff-role assignment and deactivation coordinate through the port's locking read and the membership mutation.
+- Nested callers observe the global lock order across the whole transaction. The outermost owner handles retries. Audit remains in the same transaction.
