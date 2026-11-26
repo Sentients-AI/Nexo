@@ -36,3 +36,4 @@ rules:
     - Tests\Arch\PHPStan\VendorOrchestrationRule
     # L10: audit_log is append-only; AuditRecorder's insert is its only write.
     - Tests\Arch\PHPStan\AuditLogMutationRule
+    - Tests\Arch\PHPStan\MembershipWriteRule

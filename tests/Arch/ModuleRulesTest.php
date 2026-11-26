@@ -1,5 +1,8 @@
 <?php
 
+use App\Modules\Identity\Contracts\ActiveMembershipCheck;
+use App\Modules\Vendors\Domain\Vendor;
+use App\Modules\Vendors\Domain\VendorMember;
 use Tests\Arch\Fixtures\M5\CyclicDependencies;
 use Tests\Arch\Support\Fixture;
 use Tests\Arch\Support\Registry;
@@ -51,4 +54,10 @@ it('rejects a dependency cycle (M5 fixture)', function () {
     $failure = Fixture::rejects(fn () => Rules::acyclic(CyclicDependencies::GRAPH));
 
     expect($failure->getMessage())->toContain('Vendors -> Catalogue -> Inventory -> Vendors');
+});
+
+it('keeps vendor models free of global scopes and the Identity module free of a membership port implementation', function (): void {
+    expect((new Vendor)->getGlobalScopes())->toBe([])
+        ->and((new VendorMember)->getGlobalScopes())->toBe([]);
+    expect('App\Modules\Identity')->not->toImplement(ActiveMembershipCheck::class)->ignoring(ActiveMembershipCheck::class);
 });

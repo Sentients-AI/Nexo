@@ -9,8 +9,7 @@ namespace App\Modules\Identity\Contracts;
  * `users.platform_role`; a user without one is not staff. The values match
  * the column's `users_platform_role_check` constraint exactly.
  *
- * Nothing grants a role yet: GrantPlatformRole, the only planned writer, is
- * #36, and it will be audited (ADR-0023).
+ * GrantPlatformRole is the audited writer (ADR-0023).
  */
 enum PlatformRole: string
 {

@@ -269,3 +269,10 @@ Sections 1–10 are the approved design and are not changed here. This section r
 - First-owner assignment acquires the user and vendor locks before current membership reads. Staff-role assignment acquires the same user lock before calling the transaction-bound membership port.
 - Ownership transfer and reassignment acquire the vendor lock, then lock the affected active memberships in ascending ID order. Deactivation acquires the vendor and target membership locks. Staff-role assignment and deactivation coordinate through the port's locking read and the membership mutation.
 - Nested callers observe the global lock order across the whole transaction. The outermost owner handles retries. Audit remains in the same transaction.
+
+#### Membership implementation and staged isolation
+
+- The Vendors module owns vendor_members. MySQL enforces one active membership per user and at most one active owner per vendor. The application preserves exactly one owner once assigned. Terminal deactivation retains the row. Foreign keys restrict deletion and identifier changes for referenced vendors and users.
+- AssignFirstOwner creates the owner for the explicit vendor argument. TransferOwnership and ReassignOwner require an expected owner and an existing active replacement in that vendor. DeactivateMember first resolves the target within the explicit vendor and rechecks it under lock. The Identity-owned membership port checks exclusivity by user under the caller's lock.
+- The operator entries are vendors:assign-first-owner and vendors:reassign-owner. Each records its command as console provenance. Production confirmation guards against accidental execution.
+- The #36 criteria of gate #30 cover the schema, explicit vendor scoping, creation ownership and cross-vendor write refusals (VendorMemberTableTest, VendorMembershipTest and the no-global-scopes architecture test). The fail-closed context and context-scoped reads belong to #37. HTTP denial, scoped route bindings and controller coverage apply with the first vendor-facing HTTP surface. INV-1 remains unverified in full.

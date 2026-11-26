@@ -11,9 +11,9 @@ final class MarkdownTable
      *
      * @return list<list<string>>
      */
-    public static function rowsAfter(string $document, string $heading): array
+    public static function rowsAfter(string $document, string $heading, bool $allowEmpty = false): array
     {
-        return array_slice(self::tableAfter($document, $heading), 2);
+        return array_slice(self::tableAfter($document, $heading, $allowEmpty), 2);
     }
 
     /**
@@ -27,7 +27,7 @@ final class MarkdownTable
     }
 
     /** @return list<list<string>> */
-    private static function tableAfter(string $document, string $heading): array
+    private static function tableAfter(string $document, string $heading, bool $allowEmpty = false): array
     {
         $text = str_replace("\r\n", "\n", (string) file_get_contents(dirname(__DIR__, 3).'/'.$document));
         $start = strpos($text, $heading);
@@ -48,7 +48,7 @@ final class MarkdownTable
             $rows[] = array_map(trim(...), explode('|', trim($line, '|')));
         }
 
-        expect(count($rows))->toBeGreaterThan(2, "{$document} has no table after \"{$heading}\"");
+        expect(count($rows))->toBeGreaterThan($allowEmpty ? 1 : 2, "{$document} has no table after \"{$heading}\"");
 
         return $rows;
     }

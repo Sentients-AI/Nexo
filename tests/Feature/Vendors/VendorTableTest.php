@@ -180,6 +180,8 @@ it('rolls back and re-runs cleanly', function (): void {
     // and migrates afresh before the next test.
     $migration = require database_path('migrations/2026_11_22_000000_create_vendors_table.php');
 
+    $members = require database_path('migrations/2026_11_26_000000_create_vendor_members_table.php');
+    $members->down();
     $migration->down();
     expect(Schema::hasTable('vendors'))->toBeFalse()
         ->and(DB::scalar(
@@ -188,6 +190,7 @@ it('rolls back and re-runs cleanly', function (): void {
         ))->toBe(0);
 
     $migration->up();
+    $members->up();
     expect(Schema::hasTable('vendors'))->toBeTrue();
 
     [$code] = mysqlErrorOf(fn () => insertVendor(['status' => 'active']));

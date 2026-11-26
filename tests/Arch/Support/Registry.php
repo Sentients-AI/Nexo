@@ -3,6 +3,7 @@
 namespace Tests\Arch\Support;
 
 use Tests\Arch\PHPStan\AuditLogMutationRule;
+use Tests\Arch\PHPStan\MembershipWriteRule;
 use Tests\Arch\PHPStan\VendorCreationRule;
 use Tests\Arch\PHPStan\VendorOrchestrationRule;
 use Tests\Arch\PHPStan\VendorStatusWriteRule;
@@ -73,6 +74,7 @@ final class Registry
         'L8' => VendorCreationRule::class,
         'L9' => VendorOrchestrationRule::class,
         'L10' => AuditLogMutationRule::class,
+        'L11' => MembershipWriteRule::class,
     ];
 
     /**
@@ -81,7 +83,5 @@ final class Registry
      *
      * @var array<string, string>
      */
-    public const PLANNED = [
-        'L11' => 'Membership foundation task',
-    ];
+    public const PLANNED = [];
 }

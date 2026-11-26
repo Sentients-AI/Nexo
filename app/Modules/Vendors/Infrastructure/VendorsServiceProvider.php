@@ -2,7 +2,10 @@
 
 namespace App\Modules\Vendors\Infrastructure;
 
+use App\Modules\Identity\Contracts\ActiveMembershipCheck;
+use App\Modules\Vendors\Infrastructure\Console\AssignFirstOwnerCommand;
 use App\Modules\Vendors\Infrastructure\Console\CreateVendorCommand;
+use App\Modules\Vendors\Infrastructure\Console\ReassignOwnerCommand;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -12,10 +15,15 @@ use Illuminate\Support\ServiceProvider;
  */
 final class VendorsServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->bind(ActiveMembershipCheck::class, DatabaseActiveMembershipCheck::class);
+    }
+
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([CreateVendorCommand::class]);
+            $this->commands([CreateVendorCommand::class, AssignFirstOwnerCommand::class, ReassignOwnerCommand::class]);
         }
     }
 }
