@@ -33,7 +33,8 @@ feature test or the dependency should be injected so it can be faked.
 
 The `Arch` suite enforces the dependency rules in
 `docs/architecture/dependency-rules.md` (ADR-0010 §7). CI runs it first, as its
-own step: `php artisan test --testsuite=Arch`.
+own step: `php artisan test --testsuite=Arch`. It must run in a process of its
+own; see "Running tests".
 
 - Each rule is written once, in `Tests\Arch\Support\Rules`, against the
   namespaces it checks. It runs against the application, where it must pass,
@@ -370,13 +371,49 @@ test.
 
 ## Running tests
 
-```sh
-php artisan test                     # full suite, sequential
-php artisan test --filter=Checkout   # by name
-composer test                        # clears config cache, then runs the suite
+`composer test` is the supported way to run every suite, and `composer check`
+calls it. After clearing the config cache it runs four `php artisan test`
+processes, one after another, grouped as CI groups them:
 
-# What CI runs:
-php artisan test --parallel --processes=4 --testsuite=Unit,Feature
+```sh
+composer test
+# runs, each in its own PHP process:
+php artisan test --testsuite=Arch
+php artisan test --testsuite=Unit,Feature
 php artisan test --testsuite=Platform,Concurrency
-php artisan test --testsuite=Redis   # Valkey + NEXO_TEST_REDIS=1 (ADR-0022)
+php artisan test --testsuite=Redis   # skipped locally without NEXO_TEST_REDIS=1 (ADR-0022)
+```
+
+Composer stops at the first run that fails and exits nonzero, so a failure in
+any suite fails `composer test` and `composer check`. Arguments after `--` are
+passed to every run, so use `php artisan test` directly for a focused run:
+
+```sh
+php artisan test --filter=Checkout          # by name
+php artisan test --testsuite=Concurrency    # one suite
+```
+
+**Keep `Arch` in a process of its own.** Its PHPStan rule tests boot Larastan,
+which bootstraps a Laravel application and leaves that application's error and
+exception handlers installed for the rest of the process. A Laravel test that
+runs after it in the same process removes those handlers on teardown, and
+PHPUnit reports it as risky: "Test code or tested code removed exception
+handlers other than its own". A bare `php artisan test` runs every suite in one
+process, so its Platform, Concurrency and Redis tests are reported risky. Do
+not use it as a gate. `tests/Unit/ComposerTestScriptTest.php` checks that
+`composer test` runs every suite in `phpunit.xml` exactly once, with `Arch`
+alone.
+
+CI runs the same groups as separate steps, with `Unit,Feature` under
+`--parallel --processes=4`. Locally that group runs sequentially, which uses
+less memory.
+
+**Composer's process timeout.** Composer stops a script command that runs
+longer than its `process-timeout`, 300 seconds by default, and exits nonzero.
+The limit applies to each of the four runs separately. On a slow machine the
+`Unit,Feature` run can take longer than that. Raise the limit for one
+invocation, without changing the repository's configuration:
+
+```sh
+COMPOSER_PROCESS_TIMEOUT=0 composer check
 ```

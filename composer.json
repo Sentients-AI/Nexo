@@ -59,7 +59,10 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "@php artisan test --testsuite=Arch",
+            "@php artisan test --testsuite=Unit,Feature",
+            "@php artisan test --testsuite=Platform,Concurrency",
+            "@php artisan test --testsuite=Redis"
         ],
         "check": [
             "@composer validate --strict",
