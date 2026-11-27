@@ -2,7 +2,7 @@
 
 - **Status:** Draft for owner review (Phase 1)
 - **Date:** 2026-11-01
-- **Supersedes:** `vision.md`, `scope.md`, `goals.md`, `personas.md` (aljebal-albeedos framing), per ADR-0007
+- **Positioning:** ADR-0007 (general marketplace, MYR, English-primary with Arabic and Malay)
 - **Related:** [functional-requirements.md](functional-requirements.md) · [non-functional-requirements.md](non-functional-requirements.md) · [user-journeys.md](user-journeys.md)
 
 ---
@@ -16,29 +16,31 @@ Nexo is a multi-vendor general-merchandise marketplace:
 - Each vendor fulfils its own part of the order.
 - The platform collects payment, keeps a commission, and accounts for what it owes each vendor.
 
-Nexo is built as a **portfolio showcase**. It must look, behave and hold up under scrutiny like a credible commercial product. It is not operated as a real business:
+The hard part of a marketplace is not the storefront. It is the money and the stock: one payment split across vendors, refunds that touch exactly one vendor's line, a ledger that reconciles to the provider, and the last unit sold once under concurrent checkouts. Nexo is designed from those rules outwards.
 
-- all vendors, customers and orders are fictional;
-- payments run in Stripe test mode;
-- vendor payouts are simulated.
+v1 launches with three deliberate constraints, each with its own ADR before it is lifted:
+
+- payments run in Stripe test mode (ADR-0021);
+- vendor payouts are calculated and posted to the ledger, but paid out as simulated transfers (ADR-0016);
+- seeded vendors, customers and orders are fictional.
 
 ## 2. Objectives
 
 | # | Objective | Evidence of success |
 |---|---|---|
-| O1 | Demonstrate correct marketplace commerce | Multi-vendor checkout, split vendor orders, independent fulfilment and refunds, all passing the failure scenarios in `docs/architecture/lifecycles/` |
-| O2 | Demonstrate trustworthy money handling | Ledger balances under property and concurrency tests; vendor statements reconcile to orders and refunds |
-| O3 | Demonstrate engineering quality | All CI gates green (tests on MySQL, static analysis, types, lint, arch rules); ADRs for every boundary decision |
-| O4 | Feel premium | New visual identity (Phase 2); polished storefront, vendor dashboard and admin; real RTL Arabic |
-| O5 | Be reproducible | Demo rebuilt from a clean database with one command; documented credentials for each role |
+| O1 | Correct marketplace commerce | Multi-vendor checkout, split vendor orders, independent fulfilment and refunds, all passing the failure scenarios in `docs/architecture/lifecycles/` |
+| O2 | Trustworthy money handling | Ledger balances under property and concurrency tests; vendor statements reconcile to orders and refunds |
+| O3 | Engineering quality that holds as the codebase grows | All CI gates green (tests on MySQL, static analysis, types, lint, arch rules); ADRs for every boundary decision |
+| O4 | Feel premium | Own visual identity (Phase 2); polished storefront, vendor dashboard and admin; real RTL Arabic |
+| O5 | Be reproducible | Any environment rebuilt from a clean database with one command; documented demo credentials for each role |
 
-## 3. Audience
+## 3. Who Nexo serves
 
-| Audience | What they evaluate |
+| User | What they need from Nexo |
 |---|---|
-| Recruiters and hiring managers | First impression, polish, a clear README, a live demo with role logins |
-| Engineers and reviewers | Architecture, ADRs, tests, concurrency and payment correctness, code quality |
-| Project owner | A maintainable codebase that can grow |
+| Customers | Find products across many vendors, pay once, track each vendor's shipment, and get refunded for exactly what went wrong |
+| Vendors | Run a store without running a website: catalogue, stock, orders, returns, and a statement that explains every ringgit |
+| Platform staff | Approve and police vendors, arbitrate orders and returns, and reconcile the platform's money to the provider |
 
 ## 4. Users and roles
 
@@ -95,7 +97,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 
 ## 6. Scope
 
-### 6.1 In scope for v2
+### 6.1 In scope for v1
 
 | Area | Notes |
 |---|---|
@@ -118,10 +120,10 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 | Wishlist and store follow | Customer wishlist; follow vendor stores; followed-store feed on the account page |
 | Notifications | Database (in-app) and email for order, return, refund, payout and application events |
 | Search | Full-text search with facets: category, price, vendor, rating, in stock. MySQL-backed (ADR-0019) |
-| i18n | `en` (primary), `ar` (RTL), `ms` for all storefront and vendor dashboard UI. The platform admin is English-only in v2 (ADR-0020). Platform taxonomy translated. Vendor-entered content is single-language. |
+| i18n | `en` (primary), `ar` (RTL), `ms` for all storefront and vendor dashboard UI. The platform admin is English-only in v1 (ADR-0020). Platform taxonomy translated. Vendor-entered content is single-language. |
 | Demo | Reproducible seeded environment with role logins |
 
-### 6.2 Out of scope for v2 (with reason)
+### 6.2 Out of scope for v1 (with reason)
 
 | Excluded | Reason |
 |---|---|
@@ -131,7 +133,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 | Multi-currency | ADR-0007 |
 | Carrier integrations and shipping labels | Manual tracking entry |
 | Vendor-funded promotions | Platform-funded only, which keeps the finance model tight |
-| Subscriptions, gift cards, digital downloads, bundles, flash-sale engine, A/B experiments, chat, Q&A, waitlist, abandoned-cart email, AI recommendations | Legacy experimental features; not needed for the showcase objectives |
+| Subscriptions, gift cards, digital downloads, bundles, flash-sale engine, A/B experiments, chat, Q&A, waitlist, abandoned-cart email, AI recommendations | Each is a product of its own; none is needed for the v1 objectives |
 | Public REST API and mobile apps | Inertia is the only client (ADR-0018) |
 | Realtime push (WebSockets) | Polling where needed. Reverb is deferred. |
 | Multiple vendors per user | ADR-0011 |
@@ -142,15 +144,15 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 | ID | Proposal | Rationale |
 |---|---|---|
 | P-1 | **Approved by the owner, 2026-11-04.** The rules:<br>(a) Visitors may browse and search without an account.<br>(b) Visitors may keep a guest cart. It merges into the customer's cart at sign-in, including the automatic sign-in that follows registration (FR-CART-02).<br>(c) Placing an order requires a signed-in customer account; there is no guest checkout.<br>(d) New customers can register inline on the checkout page, without leaving checkout.<br>(e) The account's email must be verified before the order is submitted and before any payment is initiated. Unverified customers cannot complete checkout.<br>(f) After verifying, the customer resumes checkout with the same cart.<br>See FR-ID-01, FR-CHK-01 and journey CJ-1. | Removes guest-ownership bugs and keeps order access simple. Verification happens before placement, and no stock is reserved before placement, so time spent verifying never uses up a reservation. |
-| P-2 | Vendor products publish immediately once the vendor is approved; platform moderation is reactive (block or unblock) | Pre-moderation slows demos; reactive moderation still demonstrates control |
+| P-2 | Vendor products publish immediately once the vendor is approved; platform moderation is reactive (block or unblock) | Pre-moderation slows vendor onboarding; reactive moderation keeps the platform in control |
 | P-3 | Return window of 7 days after delivery; auto-deliver 10 days after shipping when not confirmed | No carrier integration exists |
 | P-4 | Reservation TTL of 15 minutes, with one extension while payment is processing | Brief §11 |
 | P-5 | Points: earn 1 point per RM 1 of goods on **completed** vendor orders; 100 points = RM 1; redeem up to 20 % of goods subtotal | Award after the return window avoids most clawbacks |
-| P-6 | Referral: referee gets RM 10 off a first order over RM 50; referrer gets 500 points when that order completes | Simple and demonstrable |
+| P-6 | Referral: referee gets RM 10 off a first order over RM 50; referrer gets 500 points when that order completes | Simple to explain and to account for |
 | P-7 | Default commission 10 %, with category and vendor overrides; minimum payout RM 50; weekly payout run (Monday 09:00 MYT) | Plausible marketplace parameters |
 | P-8 | Customer may cancel a VendorOrder only while `awaiting_fulfilment`; afterwards they use a return | Standard practice |
 
-## 7. Success criteria for v2 (release gate)
+## 7. Success criteria for v1 (release gate)
 
 1. A customer buys products from **three vendors** in one checkout. They see one order with three vendor shipments, tracked independently.
 2. Each vendor fulfils independently. One vendor cancels; the customer is refunded for that vendor only, and the other two are unaffected.
@@ -164,7 +166,7 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 ## 8. Assumptions and constraints
 
 - Single developer; phase-gated delivery per the brief.
-- Demo scale: about 12 vendors, up to 1,000 products, up to 5,000 seeded orders. Architecture is not designed beyond 10× that without a new ADR.
+- Launch scale: about 12 vendors, up to 1,000 products, up to 5,000 seeded orders. Architecture is not designed beyond 10× that without a new ADR.
 - Stripe test mode is available for MYR card payments, including 3-D Secure test cards. This is an assumption to verify in Phase 5 (D-14).
 - All content (names, addresses, images) is fictional or licensed.
 
@@ -172,4 +174,3 @@ The full permission matrix is in `docs/architecture/security-model.md`.
 
 - P-2 to P-8 above. P-1 was approved on 2026-11-04.
 - D-9, D-10, D-11 in ADR-0016.
-- D-15: commit author identity before the repository is public.
