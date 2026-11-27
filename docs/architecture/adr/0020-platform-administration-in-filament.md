@@ -14,7 +14,7 @@ The owner accepted this ADR before Phase 2:
 - Filament is used for platform administration at `/admin`, for authorised platform staff only.
 - The vendor dashboard stays Vue 3 + Inertia.js (ADR-0008).
 - Filament uses the Phase 2 design tokens.
-- The admin interface is English-only in v2.
+- The admin interface is English-only in v1.
 - Filament resources and actions delegate business operations to Application use cases. They never mutate domain status or financial data directly.
 - Laravel 13 compatibility is verified in Phase 3. The fallback in Decision §5 is retained.
 
@@ -22,7 +22,7 @@ The owner accepted this ADR before Phase 2:
 
 - Filament delivers dense back-office tooling for a staff-only surface at low cost.
 - Vendors keep a product-grade, localised Vue experience.
-- Keeping vendors out of Filament avoids the panel-tenancy pattern that Phase 0 found unsafe (S1).
+- Keeping vendors out of Filament avoids the panel-tenancy pattern that fails open (S1, ADR-0011).
 
 **Dependency on a Proposed ADR.** This ADR relies on mechanisms defined by ADR-0011, which is still **Proposed**:
 
@@ -36,7 +36,6 @@ Decision §1 and §6 name these mechanisms as the intended design. They are not 
 ## Context
 
 - The brief (§6.3) asks to *evaluate and improve* Filament rather than assume replacement.
-- The old repository used Filament (v5.7) for an admin panel and Vue for the vendor area.
 - Platform staff need dense back-office CRUD, queues and audit views. Vendors need a product-grade, branded, localised experience (Phase 2 design system).
 
 ## Problem
@@ -54,7 +53,7 @@ Which technology serves the platform-administration and vendor surfaces?
 ### A. Filament for both admin and vendor
 
 - Fast to build.
-- Rejected: the vendor experience would look like a generic admin, and Filament's tenancy model invites the global-scope pattern Phase 0 found unsafe.
+- Rejected: the vendor experience would look like a generic admin, and Filament's tenancy model invites the global-scope pattern ADR-0003 rejects.
 
 ### B. Vue for both
 
@@ -83,7 +82,7 @@ Which technology serves the platform-administration and vendor surfaces?
    - A vendor member without `platform_role` is denied at `/admin`.
    - Under ADR-0011 (Proposed), staff cannot hold a vendor membership, so they never use `/vendor`.
    - Both surfaces call the same Application use cases and policies. Business rules are not duplicated in either UI.
-7. **Language.** The admin interface is English-only in v2. Arabic, Malay and right-to-left requirements apply to the storefront and the vendor dashboard.
+7. **Language.** The admin interface is English-only in v1. Arabic, Malay and right-to-left requirements apply to the storefront and the vendor dashboard.
 
 ## Positive consequences
 
@@ -93,7 +92,7 @@ Which technology serves the platform-administration and vendor surfaces?
 ## Negative consequences
 
 - Two UI technologies (Livewire for admin, Vue for the rest).
-- The admin is localised in `en` only for v2 (stated limitation).
+- The admin is localised in `en` only for v1 (stated limitation).
 
 ## Risks
 

@@ -11,7 +11,7 @@
 
 - `main` already requires `php ^8.5` and `laravel/framework ^13.17`. Local PHP is 8.5.8.
 - `.env.example` uses MySQL with database and cache-backed queue and cache. `phpunit.xml` and `docs/engineering/testing.md` pin tests to in-memory SQLite. CI installs only `pdo_sqlite`.
-- Phase 0 showed the cost of SQLite tests. The old repository's "concurrency" and "torture" tests passed on SQLite with real double-subtraction and race bugs present, because:
+- SQLite tests are cheap and quietly wrong for this domain. A "concurrency" test on SQLite passes with double-subtraction and race bugs present, because:
   - `SELECT … FOR UPDATE` is a no-op on SQLite;
   - SQLite serialises all writers;
   - `CHECK` and type semantics differ from MySQL.
@@ -24,7 +24,7 @@ Which runtime versions and which database engine do code and tests run on?
 ## Decision drivers
 
 - Tests must exercise the real locking, isolation and constraint semantics.
-- Reproducibility for reviewers: one command, no surprises.
+- Reproducibility: anyone who clones the repository gets the same result from one command.
 - CI time stays reasonable.
 
 ## Considered alternatives
@@ -32,7 +32,7 @@ Which runtime versions and which database engine do code and tests run on?
 ### A. Keep SQLite for feature tests; add a separate MySQL suite for concurrency only
 
 - Faster local feedback.
-- But it keeps two behaviours. Constraint and `CHECK`, JSON, collation and locking differences leak into the "fast" suite and give false confidence, as happened in the old repository.
+- But it keeps two behaviours. Constraint and `CHECK`, JSON, collation and locking differences leak into the "fast" suite and give false confidence exactly where the money and stock rules live.
 
 ### B. MySQL 8.4 LTS for every test that touches the database (chosen)
 
@@ -90,8 +90,8 @@ Which runtime versions and which database engine do code and tests run on?
 5. **Redis** is used for queue, cache and locks in deployed environments (demo). Local development may use the `database` queue and cache drivers.
 6. **Local configuration caching is forbidden in development and tests.**
    `bootstrap/cache/config.php` must not exist in a working copy; guard G1 refuses
-   to run tests if it does. This prevents the Phase 0 incident where a cached config
-   pointed tests at the MySQL database `nile`.
+   to run tests if it does. A cached config silently overrides
+   `phpunit.xml`, which is how a test run ends up truncating a real database.
 
 ## Positive consequences
 
@@ -129,4 +129,4 @@ Which runtime versions and which database engine do code and tests run on?
 
 ## Related
 
-- ADR-0014 (inventory), ADR-0015 (checkout), ADR-0021 (environments); Phase 0 §9, R4.
+- ADR-0014 (inventory), ADR-0015 (checkout), ADR-0021 (environments).

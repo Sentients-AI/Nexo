@@ -4,11 +4,11 @@
 - **Date:** 2026-11-01
 - **Source:** [product-requirements.md](product-requirements.md)
 
-**Priority** uses MoSCoW: M = must, S = should, C = could. Every M requirement is in the v2 release gate.
+**Priority** uses MoSCoW: M = must, S = should, C = could. Every M requirement is in the v1 release gate.
 
 **Acceptance criteria** are written so that each can become one or more Pest tests. **[INV-n]** refers to [`../architecture/INVARIANTS.md`](../architecture/INVARIANTS.md).
 
-**Legacy IDs.** `REQ-VENDOR-*` and `REQ-VENDOR-MGMT-*` from `requirements/vendor/onboarding.md` and `requirements/platform/vendor-management.md` are carried into FR-VEN. Their mapping is listed in each row.
+**Requirement IDs from the earlier stubs.** `REQ-VENDOR-*` and `REQ-VENDOR-MGMT-*` from `requirements/vendor/onboarding.md` and `requirements/platform/vendor-management.md` are carried into FR-VEN. Their mapping is listed in each row.
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## FR-VEN: Vendor onboarding and management
 
-| ID | P | Requirement | Acceptance criteria | Legacy |
+| ID | P | Requirement | Acceptance criteria | REQ ID |
 |---|---|---|---|---|
 | FR-VEN-01 | M | A signed-in customer can submit a vendor application (store name, description, contact, category focus) | Submission does not create a Vendor; one open application per user | REQ-VENDOR-001 |
 | FR-VEN-02 | M | Platform Operations approves or rejects applications with a reason | Approve creates a Vendor in `pending`, plus an Owner membership for the applicant, in one transaction. Reject creates no Vendor and notifies the applicant. | REQ-VENDOR-001, 001A |
@@ -154,7 +154,7 @@
 | ID | P | Requirement | Acceptance criteria |
 |---|---|---|---|
 | FR-PRO-01 | M | Platform Operations creates promotions: coupon code or automatic; percentage or fixed; minimum spend; target all, categories or vendors; total and per-customer usage limits; date window | |
-| FR-PRO-02 | M | One coupon per checkout; the best automatic promotion is applied when no coupon is used (no stacking in v2) | |
+| FR-PRO-02 | M | One coupon per checkout; the best automatic promotion is applied when no coupon is used (no stacking in v1) | |
 | FR-PRO-03 | M | Discounts are allocated to eligible lines by largest remainder and stored per line [INV-8] | Property test: sum exact |
 | FR-PRO-04 | M | Usage limits hold under concurrency (redemption reserved at checkout, released on expiry) | Parallel test on the last allowed use |
 | FR-PRO-05 | M | Promotions are platform-funded; vendor payable is unaffected | Ledger test |

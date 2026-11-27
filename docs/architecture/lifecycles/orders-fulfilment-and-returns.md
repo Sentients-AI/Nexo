@@ -65,7 +65,7 @@ requested ──► approved ──► submitted ──► succeeded
 | Platform Finance override | `approved` | Staff decision; audit |
 | (Customer) | — | Customers never create refunds directly; they create returns or cancellations |
 
-`requested` exists for future approval workflows. In v2 all initiators are pre-authorised, so refunds start at `approved`.
+`requested` exists for future approval workflows. In v1 all initiators are pre-authorised, so refunds start at `approved`.
 
 **Amount computation** (per line, from stored allocations):
 

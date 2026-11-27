@@ -39,7 +39,7 @@ body:
   - type: textarea
     id: scope
     attributes:
-      label: Scope Considerations
+      description: Explain where this sits in the PRD scope (§6.1 or §6.2) and the MoSCoW priority (M, S or C) of its requirement.
       description: Explain whether this belongs to Core, Extended, Experimental, or Deferred scope.
     validations:
       required: true

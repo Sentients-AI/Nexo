@@ -8,11 +8,9 @@ implement it.
 ## Requirement hierarchy
 
 ```text
-Product Vision
+Product requirements (PRD)
       ↓
-Scope
-      ↓
-Requirements
+Functional and non-functional requirements
       ↓
 Epics
       ↓
@@ -23,7 +21,7 @@ Tasks
 Implementation
 ```
 
-## Nexo 2.0 product documents (current)
+## Documents
 
 | Document | Purpose |
 |---|---|
@@ -33,9 +31,8 @@ Implementation
 | [`user-journeys.md`](user-journeys.md) | Customer, vendor and platform-staff workflows with failure branches |
 | [`screen-inventory.md`](screen-inventory.md) | Every customer and vendor screen, its layout, status and what it waits for |
 
-## Superseded (history only)
+## Earlier requirement stubs
 
-`vision.md`, `scope.md`, `goals.md` and `personas.md` (aljebal-albeedos framing) were superseded on
-2026-11-01 by ADR-0007. `problem-statement.md` and the empty stubs under `requirements/` are
-also superseded: `requirements/vendor/onboarding.md` and
-`requirements/platform/vendor-management.md` are carried into FR-VEN.
+`requirements/vendor/onboarding.md` and `requirements/platform/vendor-management.md`
+are carried into FR-VEN, which is authoritative. Their `REQ-VENDOR-*` IDs are mapped in
+each FR-VEN row.

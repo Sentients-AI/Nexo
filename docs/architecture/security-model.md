@@ -89,7 +89,7 @@ A `pending` vendor can manage its profile, shipping and draft products, but cann
 
 | Threat | Control |
 |---|---|
-| Cross-vendor access (Phase 0 S1) | Fail-closed VendorContext, scoped bindings, isolation suite |
+| Cross-vendor access (S1, ADR-0011) | Fail-closed VendorContext, scoped bindings, isolation suite |
 | IDOR on customer resources | Scoped lookup by public id, plus tests |
 | Price or quantity tampering | Server re-pricing; client totals only compared, never trusted |
 | Forged webhooks | Signature verification with a tolerance window; 400 on failure |

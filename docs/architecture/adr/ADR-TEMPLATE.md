@@ -18,7 +18,7 @@ The specific question this ADR answers, in one or two sentences.
 
 ## Decision drivers
 
-- The forces that matter for this decision (correctness, cost, operability, showcase value, …).
+- The forces that matter for this decision (correctness, cost, operability, user impact, …).
 
 ## Considered alternatives
 

@@ -37,7 +37,7 @@ How do we prove that Laravel's Redis-backed cache, locks, rate limiter and queue
 
 ### A. Keep `database`/`array` drivers in all tests; trust Redis in production
 
-Rejected. Lock, queue and rate-limiter semantics on Redis (Lua scripts, TTL precision, `SET NX PX`) would go unproven, the gap Phase 0 found with SQLite.
+Rejected. Lock, queue and rate-limiter semantics on Redis (Lua scripts, TTL precision, `SET NX PX`) would go unproven, the same gap ADR-0009 closed for SQLite.
 
 ### B. Redis OSS image in CI
 

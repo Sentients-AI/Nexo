@@ -122,7 +122,7 @@ Each interface has a contract test suite in `tests/Contracts/` that runs against
 | `payment_intent.canceled` | Attempt cancelled |
 | `charge.refunded`, `refund.updated`, `refund.failed` | Refund resolution |
 | `charge.dispute.created`, `charge.dispute.closed` | Dispute lifecycle |
-| `balance.available` *(informational)* | Ignored in v2 |
+| `balance.available` *(informational)* | Ignored in v1 |
 
 Unknown event types are stored and marked processed with no effect. They are counted in health metrics.
 

@@ -165,7 +165,7 @@ One implementation is used by the storefront, search indexing and checkout.
 
 **INV-20 · Environment isolation.**
 
-- No Nexo 2.0 environment holds legacy production credentials.
+- No environment holds another environment's credentials.
 - No environment accepts live payment keys.
 - Tests run only against databases whose names end in `_testing`.
 - **Enforcement:** boot checks and the test bootstrap guard (ADR-0009, ADR-0021).

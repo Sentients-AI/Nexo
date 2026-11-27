@@ -15,7 +15,7 @@ ADR-0004 chose one parent (`OrderGroup`) with one `Order` per vendor. That struc
 - **Transfers:** a Stripe Connect `Transfer` per child on payment, and a transfer reversal per refund. D-6 replaces this with an internal ledger and simulated payouts (ADR-0016).
 - **PaymentIntent:** "exactly one PaymentIntent per OrderGroup". With checkout retries after a decline or provider outage, a group can have several *attempts* over time. What matters is *at most one active attempt* and *at most one successful capture*.
 
-Phase 0 (C4) also found the old state machine bypassed: `updateStatus` accepted any status.
+A state machine is only as strong as its weakest setter. An `updateStatus` method that accepts any status (C4) turns every transition rule into a suggestion.
 
 ## Problem
 

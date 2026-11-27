@@ -1,22 +1,31 @@
 # Nexo
 
-**Nexo** is the commerce engine powering **aljebal-albeedos (الجبل الأبيض)** — a
-single Arabic-first online marketplace where many independent vendors sell
-through one storefront. Customers shop across vendors in one cart and pay once;
-the platform splits each purchase into per-vendor orders, retains a commission,
-and settles vendors.
+**Nexo** is a multi-vendor marketplace. Many independent vendors sell through
+one storefront; a customer fills one cart across vendors and pays once. The
+platform splits that payment into one order per vendor, keeps a commission, and
+accounts for every sen it owes each vendor in a double-entry ledger.
 
-Nexo is infrastructure. There is exactly one marketplace running on it. See
-[`docs/product/vision.md`](docs/product/vision.md) for the full product framing
-and [`docs/architecture/marketplace-migration.md`](docs/architecture/marketplace-migration.md)
-for where the codebase is headed.
+The storefront is the easy part. Nexo is built around the parts that usually go
+wrong: one payment split across vendors, a refund that touches exactly one
+vendor's line, the last unit sold once under concurrent checkouts, and a vendor
+team that can never see another vendor's data. Each of those is a written
+decision ([`docs/architecture/adr/`](docs/architecture/adr/)), an invariant with
+a named proof ([`INVARIANTS.md`](docs/architecture/INVARIANTS.md)), and a test
+that runs on MySQL. The product itself is in
+[`docs/product/product-requirements.md`](docs/product/product-requirements.md).
 
-> **Status:** Phase 3 frontend foundation (milestones M1–M5) is merged. The
-> marketplace business capabilities (accounts, vendor onboarding, catalogue,
-> split checkout, payments) are not built yet. Every database test runs on
-> MySQL behind a test database guard, with a process-based concurrency
-> harness (ADR-0009). Identity, typed page contracts, vendor context and the
-> admin panel wait on ADR-0010, ADR-0011 and ADR-0018.
+Prices are in MYR. The storefront and vendor dashboard ship in English, Malay
+and Arabic, right to left included (ADR-0007).
+
+> **Status:** the frontend foundation (M1–M5) and the platform baseline are
+> merged: a modular monolith with enforced boundaries (ADR-0010), every database
+> test on MySQL behind a test database guard with a process-based concurrency
+> harness (ADR-0009), and Redis contracts proven on Valkey in CI (ADR-0022). The
+> Vendors and Identity modules exist: vendor registration and lifecycle,
+> memberships and ownership, and an append-only audit log written in the same
+> transaction as the change (ADR-0011, ADR-0023, ADR-0024). Catalogue, checkout
+> and payments are not built yet. In v1, payments run in Stripe test mode and
+> vendor payouts are simulated (ADR-0016, ADR-0021).
 
 ## What exists today
 
@@ -149,7 +158,7 @@ These routes are not registered in any other environment and return 404 there.
 
 | | |
 |--|--|
-| Product vision, scope, requirements | [`docs/product/`](docs/product/) |
+| Product requirements, journeys, scope | [`docs/product/`](docs/product/) |
 | Screens per journey, and what each waits for | [`docs/product/screen-inventory.md`](docs/product/screen-inventory.md) |
 | Architecture, invariants, ADRs | [`docs/architecture/`](docs/architecture/) |
 | Engineering standards & process | [`docs/engineering/`](docs/engineering/) |
@@ -182,8 +191,8 @@ authorisation. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and
 The product calls a seller a **vendor**. [ADR-0005](docs/architecture/adr/0005-vendor-naming.md)
 (accepted) uses `Vendor` for the marketplace domain, persisted in the Vendors
 module's `vendors` table, and code and docs follow it. It supersedes
-[ADR-0002](docs/architecture/adr/0002-vendor-is-a-tenant-record.md), which used
-`tenant` for the previous SaaS codebase. No vendor model exists in the code yet.
+[ADR-0002](docs/architecture/adr/0002-vendor-is-a-tenant-record.md), which
+borrowed `tenant` from Laravel's multi-tenancy tooling.
 
 ## Security
 

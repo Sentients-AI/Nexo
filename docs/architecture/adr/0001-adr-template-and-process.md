@@ -12,12 +12,6 @@ made, what was rejected, and what we now have to live with. It is written when t
 decision is made, and it is not edited afterwards except to change its `Status`
 (e.g. `Superseded by ADR-0042`).
 
-## Relationship to `docs/DECISIONS.md`
-
-`docs/DECISIONS.md` is the pre-2026-08-30 chronological log of decisions made while the
-system was a multi-tenant SaaS. It stays as history. From 2026-08-30 onward, every
-boundary-shaping decision gets a numbered ADR in this folder instead.
-
 ## When to write one
 
 Write an ADR when a choice:

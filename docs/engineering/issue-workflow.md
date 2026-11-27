@@ -7,7 +7,7 @@ Epic  →  Story  →  Task  →  Branch (pull request optional)
 ```
 
 - **Epic** — a large capability spanning multiple stories (e.g. "Split checkout",
-  a phase in `docs/architecture/marketplace-migration.md`). Tracks scope and
+  an area in PRD §6.1). Tracks scope and
   sequencing; not implemented directly.
 - **Story** — one user-facing capability derived from an approved product
   requirement. Has acceptance criteria written as observable behaviour. Uses the
@@ -54,6 +54,7 @@ If an issue can't answer these, it's not ready to start — clarify it first.
 
 ## Scope tags
 
-Product work is tagged against `docs/product/scope.md`: **Core**, **Extended**,
-**Experimental**, **Deferred**. An Experimental item must never block a Core
+Product work is tagged against the PRD scope (`docs/product/product-requirements.md`
+§6) and the MoSCoW priority of its FR-* requirement: **M**, **S** or **C**. Work
+outside §6.1 is not started without a PRD change. A C item must never block an M
 change.

@@ -9,10 +9,9 @@ built, operated, and evolved.
 |-----------------|---------------------------------------------------------------------|
 | `architecture/` | Architecture, boundaries, invariants, and ADRs                      |
 | `development/`  | Local development and implementation guidance                       |
-| `discovery/`    | Phase reports: Phase 0 assessment, Phase 1 review                   |
 | `engineering/`  | Engineering process and standards — testing, quality, workflow      |
 | `operations/`   | Deployment, infrastructure, monitoring, and incident procedures     |
-| `product/`      | Product requirements, scope, personas, goals, and product decisions |
+| `product/`      | Product requirements, user journeys, screens, and product decisions |
 
 ## Start here
 
@@ -25,8 +24,6 @@ built, operated, and evolved.
   [`architecture/domain-context-map.md`](architecture/domain-context-map.md),
   [`architecture/INVARIANTS.md`](architecture/INVARIANTS.md), and the ADRs in
   [`architecture/adr/`](architecture/adr/).
-- How Nexo 2.0 got here? [`discovery/`](discovery/): the Phase 0 assessment and the
-  Phase 1 review.
 
 ## Documentation Principle
 

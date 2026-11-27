@@ -9,12 +9,12 @@
 
 ## Context
 
-Phase 0 findings:
+Checkout is where marketplace code most often loses money. The failure modes this design has to rule out:
 
-- **C1 (critical):** successful payments never marked orders paid. The webhook handler re-confirmed an already-succeeded intent, and the `PaymentSucceeded` event was never dispatched.
-- **C6 (high):** the Stripe call ran inside the database transaction.
-- **C5 (high):** refunds raced and had no provider idempotency keys.
-- A guest could check out another session's cart.
+- **C1 (critical):** a successful payment that never marks the order paid, for example a webhook handler that re-confirms an already-succeeded intent and never dispatches `PaymentSucceeded`.
+- **C6 (high):** a Stripe call inside the database transaction, holding locks across network I/O.
+- **C5 (high):** refunds that race, with no provider idempotency keys.
+- A guest checking out another session's cart.
 
 The brief's payment scenarios (§11) are:
 
@@ -54,7 +54,7 @@ Rejected. A closed browser loses the order, and the return URL is client-control
    - Guests may browse and keep a cart. They start checkout by signing in or registering inline. Either way the guest cart is merged into the customer's cart (FR-CART-02).
    - Step 1 (place) and Step 2 (attempt) both reject a guest or an unverified account **before any write**. No OrderGroup, reservation, redemption, points hold, payment attempt or provider call is made. The check is in the use cases as well as the routes (security-model §5), so it holds even when the UI is bypassed.
    - Verification happens before placement, and reservations are created only at placement. So the reservation TTL never runs while a customer verifies.
-   - Guest checkout is out of scope for v2 (PRD §6). This removes the guest-cart ownership class of bug.
+   - Guest checkout is out of scope for v1 (PRD §6). This removes the guest-cart ownership class of bug.
 
 2. **Step 1, place.** `POST /checkout` carries an `Idempotency-Key`: a UUID generated when the checkout page renders, unique per customer.
    1. Re-price the cart server-side: current prices, promotions, points, shipping quotes. If the total differs from the total the customer confirmed, return **409** with the new summary. Never charge an amount the customer did not see.
@@ -156,8 +156,8 @@ Rejected. A closed browser loses the order, and the return URL is client-control
 
 ## Migration implications
 
-None (greenfield). The old code is not ported.
+None (greenfield).
 
 ## Related
 
-- ADR-0012, ADR-0014, ADR-0016, ADR-0017; `lifecycles/checkout-and-payment.md`; Phase 0 C1, C5, C6.
+- ADR-0012, ADR-0014, ADR-0016, ADR-0017; `lifecycles/checkout-and-payment.md`.

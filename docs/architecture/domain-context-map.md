@@ -18,7 +18,7 @@ The table records which criterion separates each module. Capabilities that share
 |---|---|---|
 | Identity and access management | **Identity** | Accounts, authentication, staff roles; one owner of `users` |
 | Vendor management | **Vendors** | Vendor lifecycle, applications, team membership, store profile; operator-owned lifecycle |
-| Catalogue, categories and attributes, product variants, pricing | **Catalogue** | One consistency boundary: a variant's price, options and sellability change together. Pricing has no independent lifecycle in v2. |
+| Catalogue, categories and attributes, product variants, pricing | **Catalogue** | One consistency boundary: a variant's price, options and sellability change together. Pricing has no independent lifecycle in v1. |
 | Inventory | **Inventory** | Different consistency needs (high-contention counters, reservations); single writer of stock |
 | Shipping (rates) | **Shipping** | Vendor-configured rate tables and quoting. Shipments are part of Ordering (below). |
 | Cart, checkout, orders, shipping and fulfilment (shipments), returns | **Ordering** | Cart → checkout → OrderGroup/VendorOrder → shipments → returns share the order lifecycle and language |

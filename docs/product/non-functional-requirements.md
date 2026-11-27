@@ -24,7 +24,7 @@ These requirements are measurable. Where a target is an assumption rather than a
 | NFR-SEC-04 | Webhook signature verification; CSRF on all state-changing web routes; rate limits on auth, checkout, coupon validation and review creation | Tests |
 | NFR-SEC-05 | Uploads: images only (JPEG, PNG, WebP), ≤ 5 MB, re-encoded server-side, randomised names, EXIF stripped | Tests |
 | NFR-SEC-06 | No secrets in the repository; live payment keys refused at boot (ADR-0021); `composer audit` and `npm audit --omit=dev` gate CI | CI |
-| NFR-SEC-07 | Production error pages never expose exception messages or stack traces (Phase 0 S-finding) | Test with `APP_DEBUG=false` |
+| NFR-SEC-07 | Production error pages never expose exception messages or stack traces | Test with `APP_DEBUG=false` |
 | NFR-SEC-08 | Security headers: CSP (nonce-based for Vite), HSTS on demo, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors 'none'` | Header tests |
 
 ## NFR-PERF: Performance (assumption-based targets; measured in Phase 9)
@@ -60,7 +60,7 @@ These requirements are measurable. Where a target is an assumption rather than a
 
 | ID | Requirement |
 |---|---|
-| NFR-I18N-01 | en, ar and ms have 100 % key coverage for the storefront and vendor dashboard UI; CI fails on missing keys. The platform admin is English-only in v2 (ADR-0020). |
+| NFR-I18N-01 | en, ar and ms have 100 % key coverage for the storefront and vendor dashboard UI; CI fails on missing keys. The platform admin is English-only in v1 (ADR-0020). |
 | NFR-I18N-02 | RTL uses CSS logical properties and direction-aware components (icons, carousels, steppers, progress); no physical `left/right` utilities in components (lint rule) |
 | NFR-I18N-03 | Currency, number and date formatting is locale-aware through `Intl`; dates display in MYT |
 | NFR-I18N-04 | Locale in the storefront URL (`/ms/...`, `/ar/...`; `en` unprefixed) for shareable links; `hreflang` alternates |

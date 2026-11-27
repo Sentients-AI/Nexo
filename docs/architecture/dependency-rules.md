@@ -83,7 +83,7 @@ The composition root (`App\Providers`, kernel-level `App\Http`, `bootstrap/`, `r
 | `VendorApproved`, `VendorSuspended`, `VendorReinstated` (Vendors) | Catalogue (sellability cache), Search, Notifications |
 | `ProductChanged`, `ProductBlocked/Unblocked` (Catalogue) | Search, Engagement (wishlist availability), Notifications (followers, S) |
 | `StockLevelChanged` (Inventory) | Search |
-| `CheckoutPlaced` (Ordering) | Notifications (none in v2: placeholder for an abandoned-payment reminder) |
+| `CheckoutPlaced` (Ordering) | Notifications (none in v1: placeholder for an abandoned-payment reminder) |
 | `OrderGroupPaid`, `VendorOrderPaid` (Ordering) | Notifications, Finance (capture posting, from `PaymentCaptured`, see below) |
 | `PaymentCaptured`, `ProviderFeeRecorded`, `RefundSucceeded`, `RefundFailed`, `DisputeOpened/Won/Lost` (Payments) | Finance, Ordering (refund status), Loyalty and Promotions (reversals), Notifications |
 | `VendorOrderCancelled`, `ReturnReceived` (Ordering) | Payments (request refund), Notifications |

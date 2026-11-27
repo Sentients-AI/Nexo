@@ -1,4 +1,4 @@
-# ADR-0002: A "vendor" is the existing tenant record, reframed
+# ADR-0002: Model the seller as a tenant record
 
 **Status:** Superseded by ADR-0005 (owner, 2026-11-22)
 **Date:** 2026-08-30
@@ -7,54 +7,41 @@
 
 ## Context
 
-The system was built as a multi-tenant SaaS: `tenants` table, `Tenant` model, `tenant_id`
-on ~21 models, subdomain resolution, a global `TenantScope`. See `docs/DECISIONS.md`
-entries from 2026-02-07.
+Nexo is one marketplace with many sellers. Every seller-owned row (products, inventory,
+orders, payouts) needs an owner column, and something has to stop one seller's team from
+reading another seller's data.
 
-The product is now a single marketplace (see [../../product/vision.md](../../product/vision.md)).
-There is exactly one "platform". What used to be a tenant (an isolated store) is now a
-**vendor** (a seller listing into a shared catalog).
-
-We must decide how far to carry the rename into the schema and code, given pilot scale and
-a live database with real data on `store.aljebal-albeedos.com`.
+The Laravel ecosystem already has a well-worn vocabulary for this: a `Tenant` model, a
+`tenant_id` column, a `BelongsToTenant` trait and a global `TenantScope` (Filament's panel
+tenancy and most tenancy packages use the same names). Adopting that vocabulary means
+less to invent and less to explain.
 
 ## Decision
 
-1. **Keep the `tenants` table and the `Tenant` Eloquent model.** Do not rename the table
-   or the class in V1.
-2. **Reframe the bounded context in documentation and UI as "Vendor".** User-facing
-   strings, admin nav, and new code comments say "vendor". `app/Domain/Tenant` keeps its
-   directory name for now.
-3. **`tenant_id` columns keep their name** but mean "owning vendor". A future ADR may
-   rename to `vendor_id` if it proves cheap; it is not worth a large migration at pilot
-   scale.
+1. **The seller is a `Tenant` record** in a `tenants` table, with a `Tenant` Eloquent model.
+2. **The UI and documentation say "vendor".** User-facing strings and admin navigation
+   use the business word; the code keeps the framework word.
+3. **`tenant_id` means "owning vendor"** on every seller-owned table.
 4. **There is no `Platform` entity.** "The platform" is the deployment. Platform operators
-   are users with no `tenant_id` and the super-admin role, exactly as today.
-5. New marketplace fields (already started on the `redesign` branch:
-   `add_marketplace_fields_to_tenants_table`) live on `tenants` — approval state, Stripe
-   Connect account id, commission overrides later.
+   are users with no `tenant_id` and the super-admin role.
+5. Marketplace fields (approval state, payout account, commission overrides) live on
+   `tenants`.
 
 ## Alternatives considered
 
-- **Rename `tenants` → `vendors` everywhere now.** Rejected: touches ~21 models, factories,
-  seeders, 100+ migrations' worth of assumptions, and a live DB, for a cosmetic gain. High
-  risk, no functional benefit at this scale.
-- **Introduce a separate `Vendor` model alongside `Tenant`.** Rejected: two models for one
-  concept guarantees drift and confusion. The tenant *is* the vendor.
-- **Add a `Platform` / `Marketplace` model for future multi-tenancy of marketplaces.**
-  Rejected: speculative. [vision.md](../../product/vision.md) says one marketplace; a
-  second is a new product decision.
+- **Name it `Vendor` from the start.** Rejected at the time: the tenancy vocabulary comes
+  with ready-made scoping and Filament integration, and the naming gap looked cosmetic.
+- **A separate `Vendor` model alongside `Tenant`.** Rejected: two models for one concept
+  guarantees drift.
+- **A `Platform` / `Marketplace` model for multiple marketplaces.** Rejected: speculative.
+  Nexo is one marketplace; a second is a new product decision.
 
 ## Consequences
 
-- **Easier:** minimal migration; existing relationships, factories, and the Filament
-  `TenantResource` keep working; the pivot is mostly semantic + scoping (ADR-0003) +
-  money (ADR-0005, pending).
-- **Harder:** a naming mismatch between code (`tenant`, `Tenant`, `tenant_id`) and
-  language (`vendor`) — new developers must be told once, in
-  `docs/development/` and this ADR.
-- **Follow-up:**
-  - Filament `TenantResource` → relabel to "Vendors"; add approval + Connect fields.
-  - `docs/COMPREHENSIVE_CODEBASE_GUIDE.md` and `README.md` updated to say vendor/marketplace.
-  - A later ADR decides whether to rename `app/Domain/Tenant` → `app/Domain/Vendor` and
-    `tenant_id` → `vendor_id` once the migration settles.
+- **Easier:** scoping, factories and the Filament resource follow the patterns the
+  ecosystem documents.
+- **Harder:** code says `tenant` where the business says `vendor`, and every new developer
+  has to be told once. "Tenant" also suggests an isolated store, which a shared
+  marketplace is not.
+- **Follow-up:** a later ADR may rename `Tenant` to `Vendor` and `tenant_id` to `vendor_id`.
+  ADR-0005 did, and superseded this one.

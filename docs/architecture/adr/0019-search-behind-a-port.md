@@ -9,14 +9,13 @@
 
 ## Context
 
-- The old repository ran Typesense through Laravel Scout.
-- The brief lists Typesense in the existing stack, but says not every technology must remain.
+- Typesense through Laravel Scout is the obvious choice, and the brief lists it, but says no technology is mandatory.
 - The demo catalogue is small: a few hundred to low thousands of curated products.
-- Every extra service makes the demo harder for reviewers to run.
+- Every extra service is one more thing to run, monitor and pay for.
 
 ## Problem
 
-What powers storefront search and filtering in v2?
+What powers storefront search and filtering in v1?
 
 ## Decision drivers
 
@@ -82,4 +81,4 @@ Thin. It hides the query shape needed for facets.
 
 ## Related
 
-- ADR-0017; Phase 0 §13.4.
+- ADR-0017.
