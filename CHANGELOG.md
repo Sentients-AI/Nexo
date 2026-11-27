@@ -23,8 +23,7 @@ The format follows the principles of [Keep a Changelog].
 - `.env.example` project defaults (`APP_NAME`, `DB_DATABASE`).
 - Rewrote `SECURITY.md` as a clean, public-repo security policy.
 - Rewrote the default Laravel `README.md` for Nexo.
-- Normalised ADR filenames to the `NNNN-title.md` convention and fixed the
-  broken cross-reference in `marketplace-migration.md`.
+- Normalised ADR filenames to the `NNNN-title.md` convention.
 - Replaced the placeholder `docs/architecture/README.md` with an index.
 - Tidied `CONTRIBUTING.md` and expanded the pull request template
   (screenshots, reviewer notes).
