@@ -101,7 +101,7 @@ Only key columns are listed. Every table also has `created_at`/`updated_at` unle
 | `vendor_orders` | id, public_id, reference (`<group>-<n>`), order_group_id, vendor_id, status (ADR-0012), goods_minor, shipping_minor, discount_minor, points_value_minor, total_minor, commission_rate_bps, commission_minor, refundable_cap_minor, refund_committed_minor, currency, shipped_at, delivered_at, completed_at, return_window_ends_at, cancelled_reason | UNIQUE reference; UNIQUE (order_group_id, vendor_id); INDEX (vendor_id, status, created_at); CHECK refund_committed_minor <= refundable_cap_minor |
 | `vendor_order_lines` | id, vendor_order_id, variant_id, product_title, variant_label, sku, unit_price_minor, qty, goods_minor, discount_allocated_minor, points_value_allocated_minor, commission_minor, refund_committed_qty, refund_committed_minor | CHECK refund_committed_qty <= qty; INDEX vendor_order_id |
 | `vendor_order_status_history` (append-only) | id, vendor_order_id, from_status, to_status, actor_type (`system/customer/vendor_member/staff`), actor_id, reason, created_at | INDEX vendor_order_id |
-| `shipments` | id, vendor_order_id, carrier, tracking_number, shipped_at | UNIQUE vendor_order_id (one shipment per VendorOrder in v2) |
+| `shipments` | id, vendor_order_id, carrier, tracking_number, shipped_at | UNIQUE vendor_order_id (one shipment per VendorOrder in v1) |
 | `return_requests` | id, public_id, vendor_order_id, customer_id, status (`requested/approved/rejected/received/closed/escalated`), reason_code, note, decided_by, decided_at, escalated_at | INDEX (vendor_order_id); INDEX (status, created_at) |
 | `return_request_lines` | id, return_request_id, vendor_order_line_id, qty, received_qty, resellable_qty | CHECK received_qty <= qty |
 

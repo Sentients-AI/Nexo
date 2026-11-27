@@ -2,9 +2,9 @@
 
 ## 1. What is a Vendor?
 
-A Vendor is an independent seller operating within the aljebal-albeedos marketplace. A Vendor is a first-class domain entity with its own stable identity and lifecycle, independent of any user account. Vendor-team users may later belong to a Vendor, but the Vendor itself exists independently and represents the seller responsible for its own marketplace operations.
+A Vendor is an independent seller operating within the Nexo marketplace. A Vendor is a first-class domain entity with its own stable identity and lifecycle, independent of any user account. Vendor-team users may later belong to a Vendor, but the Vendor itself exists independently and represents the seller responsible for its own marketplace operations.
 
-The Vendor is treated as a marketplace seller rather than a user or storefront because aljebal-albeedos is a single shared marketplace where multiple independent vendors sell through one storefront.
+The Vendor is treated as a marketplace seller rather than a user or storefront because Nexo is a single shared marketplace where multiple independent vendors sell through one storefront.
 
 ## 2. What Identifies a Vendor?
 
@@ -191,15 +191,15 @@ Database constraints should enforce the primary key, required fields, unique slu
 
 ## 10. ADR Decision: Tenant Naming vs Vendor Naming
 
-The greenfield Nexo marketplace should use explicit `Vendor` terminology rather than continuing the `Tenant` naming from ADR-0002.
+Nexo should use explicit `Vendor` terminology rather than the `Tenant` naming of ADR-0002.
 
-ADR-0002 was created for an existing live SaaS database where the `tenants` table and `Tenant` model were already used across multiple models. That historical constraint does not apply to the greenfield marketplace domain.
+ADR-0002 borrowed `Tenant` from Laravel's multi-tenancy tooling for convenience. Nothing depends on that name yet, so the cost of changing it is zero today and grows with every model that adopts it.
 
-In aljebal-albeedos, the domain meaning is different. The system is a single marketplace with multiple independent sellers, so the correct business concept is a Vendor rather than a Tenant.
+The domain meaning is different from SaaS tenancy. Nexo is a single marketplace with multiple independent sellers, so the correct business concept is a Vendor rather than a Tenant.
 
-Using explicit Vendor naming makes the domain model clearer and avoids carrying SaaS multi-tenancy terminology into a marketplace architecture. Vendor is also the explicit data-isolation and ownership boundary described by the current marketplace architecture.
+Using explicit Vendor naming makes the domain model clearer and keeps SaaS multi-tenancy terminology out of a marketplace architecture. Vendor is also the explicit data-isolation and ownership boundary (ADR-0003, ADR-0011).
 
-Therefore, the proposed design is to use `Vendor` consistently for the new marketplace domain, including the model, table, relationships, and documentation.
+Therefore, the proposed design is to use `Vendor` consistently across the marketplace domain, including the model, table, relationships, and documentation.
 
 ### Proposed ADR
 

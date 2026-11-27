@@ -12,10 +12,10 @@ built yet — do not pre-build it.
   scoping), ADR-0004 (`OrderGroup` + one `Order` per vendor) are
   authoritative. Do not contradict them; supersede one with a new ADR if the
   decision genuinely changes.
-- ADR-0002 (vendor = the legacy tenant record) is superseded by ADR-0005. Do
+- ADR-0002 (the seller as a tenant record) is superseded by ADR-0005. Do
   not add a `tenants` table, a `Tenant` model or `tenant_id` columns. ADR-0003
-  predates ADR-0005: read its `BelongsToTenant` and `tenant_id` as the legacy
-  names for vendor ownership, which v2 code spells `vendor_id`.
+  predates ADR-0005: read its `BelongsToTenant` and `tenant_id` as the earlier
+  names for vendor ownership, which the code spells `vendor_id`.
 - Respect the invariants in `docs/architecture/INVARIANTS.md`.
 - Prefer Laravel conventions and explicit, boring code over cleverness.
 

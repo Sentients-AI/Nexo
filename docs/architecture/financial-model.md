@@ -1,6 +1,6 @@
 # Financial Model
 
-- **Status:** Draft for owner review (Phase 1). It implements ADR-0016 and ADR-0013. It develops Phase 0 §A.7.
+- **Status:** Draft for owner review (Phase 1). It implements ADR-0016 and ADR-0013.
 - **Date:** 2026-11-01
 - **Assumptions pending approval:** D-9 (the platform bears payment fees), D-10 (commission reversed exactly; shipping excluded from commission), D-11 (the vendor bears lost-dispute goods value; the platform bears the dispute fee)
 
@@ -10,10 +10,10 @@ All amounts are MYR. They are shown in RM for readability and stored in sen.
 
 1. **Customer money is collected once per OrderGroup**, in Stripe test mode on the platform account.
 2. **The internal ledger is the financial record.** Stripe is reconciled against it, not the other way round.
-3. **Vendor payable** for a line is the *pre-discount* goods value minus commission, plus the VendorOrder's shipping. Promotions and points are platform-funded in v2.
+3. **Vendor payable** for a line is the *pre-discount* goods value minus commission, plus the VendorOrder's shipping. Promotions and points are platform-funded in v1.
 4. **Commission** is the frozen basis-point rate × the line's pre-discount goods value, rounded half-even per line. It excludes shipping (D-10).
 5. **Every posting is a balanced transaction**, unique per (type, reference). Corrections are new transactions.
-6. **Loyalty points are not a ledger liability** in v2. Their money value is recognised as `loyalty_expense` when redeemed. This simplification is documented and acceptable for a showcase: unredeemed points have no cash value.
+6. **Loyalty points are not a ledger liability** in v1. Their money value is recognised as `loyalty_expense` when redeemed. This simplification is deliberate: unredeemed points have no cash value, so they carry no liability until redeemed.
 
 ## 2. Accounts
 
