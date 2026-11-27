@@ -1,19 +1,19 @@
 # ADR-0005: Use Vendor as the Marketplace Seller Entity
 
-- Status: Accepted (owner, 2026-11-22); supersedes ADR-0002. Implementation interpretation accepted by the owner, not a change to the decision: (1, 2026-11-22) in Nexo v2 the Vendor is persisted in a module-owned `vendors` table, owned by the Vendors module (ADR-0010; `domain-context-map.md` §2). Nexo v2 has no `tenants` table or `Tenant` model, and none is introduced.
+- Status: Accepted (owner, 2026-11-22); supersedes ADR-0002. Implementation interpretation accepted by the owner, not a change to the decision: (1, 2026-11-22) the Vendor is persisted in a module-owned `vendors` table, owned by the Vendors module (ADR-0010; `domain-context-map.md` §2). Nexo has no `tenants` table or `Tenant` model, and none is introduced.
 - Date: 2026-09-10
 
 ## Context
 
-Nexo is being developed as a single multi-vendor marketplace for aljebal-albeedos. The marketplace contains independent sellers who share one storefront.
+Nexo is a single multi-vendor marketplace. The marketplace contains independent sellers who share one storefront.
 
-ADR-0002 established the use of the existing `Tenant` model and terminology for the previous multi-tenant SaaS architecture. That decision was made in the context of an existing live SaaS database.
+ADR-0002 named the seller `Tenant`, borrowing the vocabulary of Laravel's multi-tenancy tooling. Nothing has been built on that name yet, so changing it now costs nothing.
 
-The current Vendor domain is being established as part of the greenfield marketplace design. The marketplace concept is a seller, not an isolated tenant or storefront.
+The Vendor domain is being designed now. The marketplace concept is a seller, not an isolated tenant or storefront.
 
 ## Decision
 
-The new marketplace domain will use explicit `Vendor` terminology for the seller entity.
+The marketplace domain uses explicit `Vendor` terminology for the seller entity.
 
 A Vendor has its own stable identity and lifecycle and exists independently of user accounts. Vendor-owned data will reference the Vendor explicitly where required.
 
@@ -23,9 +23,9 @@ The design will use `Vendor` consistently in new marketplace domain concepts, do
 
 Using `Vendor` reflects the actual business meaning of the entity and makes the marketplace architecture easier to understand.
 
-Continuing to use `Tenant` would carry terminology from the retired multi-tenant SaaS model into the new marketplace model and could imply that each Vendor owns an isolated storefront.
+`Tenant` is SaaS multi-tenancy vocabulary. It implies that each Vendor owns an isolated storefront, and it invites the global-scope pattern ADR-0003 rejects.
 
-The greenfield design does not have the historical database constraint that originally motivated ADR-0002.
+The convenience that motivated ADR-0002, reusing tenancy tooling as-is, does not survive ADR-0003: Nexo scopes explicitly, so the tooling buys nothing.
 
 ## Consequences
 
@@ -38,14 +38,14 @@ The greenfield design does not have the historical database constraint that orig
 
 ### Negative
 
-- Existing SaaS-era `Tenant` terminology may need to be removed or renamed where it is no longer applicable.
-- Future migration work may require additional changes if existing SaaS structures are reused.
+- Documents written before this ADR (ADR-0002, ADR-0003) still say `Tenant` and `tenant_id`; readers translate them to `Vendor` and `vendor_id`.
+- Laravel and Filament tenancy features cannot be used off the shelf, because they assume the `Tenant` vocabulary and a global scope.
 
 ## Alternatives Considered
 
 ### Continue using Tenant
 
-Rejected because `Tenant` represents an isolated SaaS store, while the current product is one shared marketplace containing multiple Vendors.
+Rejected because `Tenant` represents an isolated SaaS store, while Nexo is one shared marketplace containing multiple Vendors.
 
 ### Support both Tenant and Vendor
 

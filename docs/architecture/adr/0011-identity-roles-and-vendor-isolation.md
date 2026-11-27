@@ -12,12 +12,12 @@
 
 ## Context
 
-**Phase 0 finding S1 (critical).** In the old application, any registered shopper could reach `/vendor/*`. There were two causes:
+**The failure to rule out (S1, critical):** any registered shopper reaching `/vendor/*`. It is the most common multi-vendor breach, and it takes only two ordinary mistakes:
 
-- the vendor routes checked only `auth`;
-- the tenant global scope failed open when no tenant was resolved.
+- vendor routes that check only `auth`;
+- a tenant global scope that fails open when no tenant is resolved.
 
-ADR-0003 already chose explicit, context-dependent scoping over a global scope. The ratified personas (`docs/product/personas.md`) say:
+ADR-0003 already chose explicit, context-dependent scoping over a global scope. The product roles (PRD §4) say:
 
 - a vendor-team user belongs to exactly one vendor;
 - an operator belongs to no vendor.
@@ -44,8 +44,8 @@ How are users, vendor teams and platform staff modelled? How is "this request ac
 
 ### A. `spatie/laravel-permission` with database-stored roles and permissions
 
-- Flexible, and familiar to reviewers.
-- Rejected for v2: roles here are a fixed, small, code-reviewed set. Database-editable permissions add a privilege-escalation surface and test burden with no product need.
+- Flexible, and familiar to most Laravel developers.
+- Rejected for v1: roles here are a fixed, small, code-reviewed set. Database-editable permissions add a privilege-escalation surface and test burden with no product need.
 
 ### B. Separate guards and user tables for customers, vendors and staff
 
@@ -67,7 +67,7 @@ Rejected. A vendor owner is also a person who may shop, and duplicate accounts c
    - **Columns:** `id`, `vendor_id`, `user_id`, `role`, `status`, `deactivated_at`, and two stored generated columns, `active_marker` and `owner_marker` (definitions under "Migration implications").
    - **Roles:** `owner`, `manager`, `fulfilment`, `finance`, `support`.
    - **Statuses:** `active` and `deactivated`. Deactivation is **terminal**. A person who rejoins gets a new row, so history is kept.
-   - **One active membership per user.** In v2 a user has at most one active membership, enforced by `UNIQUE (user_id, active_marker)`. Deactivated rows have a NULL marker and do not conflict.
+   - **One active membership per user.** In v1 a user has at most one active membership, enforced by `UNIQUE (user_id, active_marker)`. Deactivated rows have a NULL marker and do not conflict.
    - **Owners:**
      - MySQL enforces **at most one** active owner per vendor with `UNIQUE (vendor_id, owner_marker)`.
      - "Exactly one" cannot be a database constraint. Once a vendor has had an owner, the application keeps exactly one: no use case may leave an owned vendor without an active owner.
@@ -148,7 +148,7 @@ Rejected. A vendor owner is also a person who may shop, and duplicate accounts c
 
 ## Negative consequences
 
-- Multi-vendor membership (one person running two stores) is not supported in v2. A later ADR would add a context switcher.
+- Multi-vendor membership (one person running two stores) is not supported in v1. A later ADR would add a context switcher.
 - Role changes require a code change. That is intended.
 - "Exactly one owner", terminal deactivation, immutable foreign keys and staff exclusion depend on application code and its locking protocol, not on the database.
 
@@ -222,4 +222,4 @@ Rejected. A vendor owner is also a person who may shop, and duplicate accounts c
 
 ## Related
 
-- ADR-0003, ADR-0005, ADR-0010, ADR-0020, ADR-0023; `security-model.md`; Phase 0 S1; gate #30.
+- ADR-0003, ADR-0005, ADR-0010, ADR-0020, ADR-0023; `security-model.md`; gate #30.

@@ -1,4 +1,4 @@
-# ADR-0021: Isolate every Nexo 2.0 environment from the legacy production system; reproduce the demo from a clean database
+# ADR-0021: Isolate every environment; reproduce the demo from a clean database
 
 - **Number:** 0021
 - **Status:** Proposed
@@ -9,14 +9,12 @@
 
 ## Context
 
-Phase 0 found that:
+Two deployment habits cause most self-inflicted data loss in small teams:
 
-- the old staging deployed the `redesign` branch against the **production** database, with shared queue and cache tables;
-- the production deploy ran `migrate --force` by default.
+- a staging environment that shares the production database, or its queue and cache tables;
+- a deploy that runs `migrate --force` as a side effect of every push.
 
-The brief (§3, §14) requires a fresh database, no connection to production, and a reproducible, isolated demo with believable data.
-
-The old deploy pipelines are still active, because disabling them needs repository admin rights (D-12 follow-up).
+The brief (§3, §14) requires every environment to own its data, and a reproducible, isolated demo with believable data.
 
 ## Problem
 
@@ -24,13 +22,13 @@ Which environments exist, how are they isolated, and how is the demo built?
 
 ## Decision drivers
 
-- Zero shared credentials or data with the legacy system.
+- Zero shared credentials or data between environments.
 - Anyone can reproduce the demo.
 - No accidental migrations against anything that matters.
 
 ## Considered alternatives
 
-### A. Reuse the legacy server and database with a new schema
+### A. One shared server and database, separated by schema or prefix
 
 Rejected. It shares credentials and blast radius.
 
@@ -44,13 +42,13 @@ Rejected. It shares credentials and blast radius.
    |---|---|---|---|
    | local | `nexo` / `nexo_testing` on the developer's MySQL | Stripe test keys (optional) or the fake provider | Development |
    | CI | MySQL 8.4 service container | Fake provider only | Gates |
-   | demo | Its own MySQL database and user on a host with **no** legacy credentials | Stripe **test mode** only | Public showcase |
+   | demo | Its own MySQL database and user on its own host, with no credentials shared with any other environment | Stripe **test mode** only | Public demo |
 
-   There is **no** production environment handling real customers or money in scope.
+   A production environment handling real customers and money is out of scope for v1. It needs its own ADR before launch.
 
 2. **Credentials:**
-   - The demo `.env` is created fresh. No value is copied from the legacy `.env`.
-   - Stripe live keys are rejected at boot: `sk_live_` and `pk_live_` prefixes throw in a service-provider check unless `NEXO_ALLOW_LIVE_PAYMENTS=true`, which no environment sets in v2.
+   - Each deployed `.env` is created fresh. No value is copied from another environment's `.env`.
+   - Stripe live keys are rejected at boot: `sk_live_` and `pk_live_` prefixes throw in a service-provider check unless `NEXO_ALLOW_LIVE_PAYMENTS=true`, which no v1 environment sets.
 3. **Migrations in deployed environments** run as an explicit, separate, manually approved workflow step. They never run as a side effect of a push.
 4. **Demo data** comes from `php artisan nexo:demo:seed`, which is deterministic (fixed seed) and idempotent on an empty database. It creates:
    - 8–12 vendors with distinct, coherent product lines;
@@ -59,7 +57,7 @@ Rejected. It shares credentials and blast radius.
 
    Ledger postings are created **through the real use cases**, never by inserting balances. This means the demo data itself proves the ledger balances.
 5. **Demo credentials** are published in the README for demo roles only (customer, vendor owner, vendor fulfilment, platform operations, platform finance). The demo can be reset nightly by a scheduled `migrate:fresh` + seed, guarded so it runs only when `APP_ENV=demo`.
-6. **Legacy system:** the old repository's deploy workflows should be disabled by its admin (D-12). Nexo 2.0 workflows never reference legacy secrets.
+6. **Secrets per environment:** CI workflows reference only the secrets of the environment they deploy to.
 
 ## Positive consequences
 
@@ -81,8 +79,8 @@ Rejected. It shares credentials and blast radius.
 
 ## Migration implications
 
-None for v2. The legacy system is out of scope apart from containment (D-12).
+None (greenfield).
 
 ## Related
 
-- ADR-0009; Phase 0 §A.5, Addendum B.
+- ADR-0009.

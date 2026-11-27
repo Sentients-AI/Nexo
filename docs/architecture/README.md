@@ -15,8 +15,7 @@ This directory records Nexo's architectural boundaries, invariants and decisions
 | [`integration-contracts.md`](integration-contracts.md) | Browser ↔ Laravel, module ↔ module, and Nexo ↔ Stripe contracts |
 | [`financial-model.md`](financial-model.md) | Ledger, commission, refunds, disputes, payouts, reconciliation, worked examples |
 | [`lifecycles/`](lifecycles/) | Checkout and payment, inventory, orders/fulfilment/returns: state machines and failure-scenario matrices |
-| [`vendor-domain-design.md`](vendor-domain-design.md) | Vendor entity design (2026-09), still current |
-| [`marketplace-migration.md`](marketplace-migration.md) | *Superseded:* SaaS-to-marketplace migration plan |
+| [`vendor-domain-design.md`](vendor-domain-design.md) | Vendor entity: identity, lifecycle, storage and the Story #1 implementation |
 | [`adr/`](adr/) | Architecture Decision Records |
 
 ## Architecture Decision Records
@@ -26,13 +25,13 @@ The template is [`adr/ADR-TEMPLATE.md`](adr/ADR-TEMPLATE.md) (ADR-0006). Propose
 | ADR | Decision | Status |
 |---|---|---|
 | [0001](adr/0001-adr-template-and-process.md) | ADR template and process | Accepted; template superseded by 0006 |
-| [0002](adr/0002-vendor-is-a-tenant-record.md) | A vendor is the existing tenant record | Superseded by 0005 (owner, 2026-11-22; fresh database) |
-| [0003](adr/0003-context-dependent-vendor-scoping.md) | Context-dependent vendor scoping | Accepted; refined by 0011 (one implementation interpretation on the status line, 2026-11-22: tenant names are historical, read as `Vendor` / `vendor_id`) |
+| [0002](adr/0002-vendor-is-a-tenant-record.md) | The seller as a tenant record | Superseded by 0005 (owner, 2026-11-22) |
+| [0003](adr/0003-context-dependent-vendor-scoping.md) | Context-dependent vendor scoping | Accepted; refined by 0011 (one implementation interpretation on the status line, 2026-11-22: its tenant names read as `Vendor` / `vendor_id`) |
 | [0004](adr/0004-order-group-and-per-vendor-orders.md) | One basket, one payment, one order per vendor | Accepted. **Superseded by 0012 on acceptance** |
 | [0005](adr/0005-vendor-naming.md) | Use Vendor as the seller entity | Accepted (owner, 2026-11-22; supersedes 0002; one implementation interpretation on the status line: a module-owned `vendors` table) |
-| [0006](adr/0006-adr-process-v2.md) | Nexo 2.0 ADR template and statuses | Accepted (brief) |
-| [0007](adr/0007-product-positioning-currency-and-locales.md) | Portfolio marketplace; MYR; EN primary with AR/MS | Accepted (D-4, D-5) |
-| [0008](adr/0008-repository-and-frontend-stack.md) | This repository; Vue 3 + Inertia + TS | Accepted (D-1, D-2) |
+| [0006](adr/0006-adr-template-and-statuses.md) | One ADR template and status model | Accepted (brief) |
+| [0007](adr/0007-product-positioning-currency-and-locales.md) | General marketplace; MYR; EN primary with AR/MS | Accepted (D-4, D-5) |
+| [0008](adr/0008-repository-and-frontend-stack.md) | Vue 3 + Inertia + TS frontend | Accepted (D-1) |
 | [0009](adr/0009-runtime-and-persistence-baseline.md) | Laravel 13 / PHP 8.5; MySQL 8.4 everywhere, including tests | Accepted (M6-D-02, M6-D-03, 2026-11-14) |
 | [0010](adr/0010-modular-monolith-and-dependency-rules.md) | Modular monolith with enforced contracts | Accepted (M6-D-04, 2026-11-15; two implementation interpretations on the status line, 2026-11-21) |
 | [0011](adr/0011-identity-roles-and-vendor-isolation.md) | Identity, roles and fail-closed vendor isolation | Accepted (owner, 2026-11-24; revised while Proposed the same day; not yet implemented); Decision 10 caller-precondition sentence superseded by 0024 |

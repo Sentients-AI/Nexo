@@ -1,7 +1,7 @@
-# ADR-0006: Adopt the Nexo 2.0 ADR template and status model
+# ADR-0006: Adopt one ADR template and status model
 
 - **Number:** 0006
-- **Status:** Accepted (settled by the Nexo 2.0 brief §4.3 and §18)
+- **Status:** Accepted (product brief §4.3 and §18)
 - **Date:** 2026-11-01
 - **Decision owner:** Project owner
 - **Supersedes:** the template section of ADR-0001 (its "when to write one" rules stay in force)
@@ -10,7 +10,7 @@
 
 ## Context
 
-ADR-0001 introduced ADRs with a four-section template: Context, Decision, Alternatives, Consequences. The Nexo 2.0 brief requires more fields:
+ADR-0001 introduced ADRs with a four-section template: Context, Decision, Alternatives, Consequences. That is enough to record a choice, but not enough to plan the work that follows from it. The product brief asks every ADR to also state:
 
 - problem;
 - decision drivers;
@@ -22,11 +22,11 @@ ADR-0001 introduced ADRs with a four-section template: Context, Decision, Altern
 
 It also requires the statuses Proposed, Accepted, Rejected, Deprecated and Superseded.
 
-Two template files currently exist: the one inside ADR-0001 and `ADR-TEMPLATE.md`. Filenames are inconsistent; `ADR-0005-vendor-naming.md` breaks the `NNNN-kebab-title.md` rule.
+Two template files exist: the one inside ADR-0001 and `ADR-TEMPLATE.md`. Filenames are inconsistent; `ADR-0005-vendor-naming.md` breaks the `NNNN-kebab-title.md` rule.
 
 ## Problem
 
-Which template, statuses and location do Nexo 2.0 ADRs use?
+Which template, statuses and location do Nexo ADRs use?
 
 ## Decision drivers
 
@@ -70,8 +70,8 @@ None directly.
 ## Migration implications
 
 - ADR-0001 to ADR-0005 keep their original format; they are not rewritten.
-- `ADR-0005-vendor-naming.md` should be renamed to `0005-vendor-naming.md` when ADR-0005 is accepted (owner action listed in the Phase 1 review).
+- `ADR-0005-vendor-naming.md` is renamed to `0005-vendor-naming.md` when ADR-0005 is accepted.
 
 ## Related
 
-- ADR-0001; the brief §4.3 and §18.
+- ADR-0001; the product brief §4.3 and §18.

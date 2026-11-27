@@ -1,7 +1,7 @@
 # ADR-0016: Account for money with an internal double-entry ledger; simulate vendor payouts
 
 - **Number:** 0016
-- **Status:** Proposed. The core direction (ledger + simulated payouts, no Stripe Connect in v2) was approved by the owner as D-6 on 2026-11-01. Rules 6–8 (D-9, D-10, D-11) await approval.
+- **Status:** Proposed. The core direction (ledger + simulated payouts, no Stripe Connect in v1) was approved by the owner as D-6 on 2026-11-01. Rules 6–8 (D-9, D-10, D-11) await approval.
 - **Date:** 2026-11-01
 - **Decision owner:** Project owner
 
@@ -94,7 +94,7 @@ Where is the financial truth recorded, and what are the rules for commission, pa
    - If the dispute is lost, the vendor bears the goods amount (debit held; any shortfall becomes `receivable`).
    - The platform bears the dispute fee.
    - No refunds or payouts are allowed against held amounts.
-9. **Promotions and loyalty** are platform-funded in v2:
+9. **Promotions and loyalty** are platform-funded in v1:
    - vendor payable is calculated on pre-discount goods;
    - the discount is posted to `promo_expense` or `loyalty_expense`.
 10. **Maturity:** when a VendorOrder becomes `completed` (return window elapsed), its pending payable moves to available. This is idempotent per VendorOrder.
@@ -138,4 +138,4 @@ Where is the financial truth recorded, and what are the rules for commission, pa
 
 ## Related
 
-- `financial-model.md`, ADR-0013, ADR-0015, ADR-0017; Phase 0 §A.7.
+- `financial-model.md`, ADR-0013, ADR-0015, ADR-0017.

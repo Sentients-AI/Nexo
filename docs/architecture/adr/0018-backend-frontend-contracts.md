@@ -9,7 +9,7 @@
 
 ## Context
 
-Phase 0 found 22 `vue-tsc` errors in the old repository, and that its prop types were hand-written and had drifted from the controllers.
+Hand-written Inertia prop types drift from the controllers that fill them. Nothing fails until a page renders `undefined` in production, and `vue-tsc` cannot catch a type that was wrong from the start.
 
 The brief (§12) asks for explicit contracts covering:
 
@@ -36,11 +36,11 @@ How are the shapes exchanged between Laravel and Vue defined once and kept in sy
 
 ### A. Hand-written TypeScript interfaces
 
-Rejected. They drift, as in the old repository.
+Rejected. They drift.
 
 ### B. A REST API with OpenAPI and a generated client
 
-Rejected for v2 surfaces. Inertia is the transport, and a public API is out of scope (PRD §6).
+Rejected for v1 surfaces. Inertia is the transport, and a public API is out of scope (PRD §6).
 
 ### C. `spatie/laravel-data` DTOs as page props, plus `spatie/laravel-typescript-transformer` to generate `.d.ts` (chosen)
 

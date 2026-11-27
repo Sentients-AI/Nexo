@@ -9,7 +9,7 @@
 
 ## Context
 
-Phase 0 finding C2: the old `DomainEventRecorder` wrote a `domain_events` table that nothing ever read. Meanwhile, plain Laravel events were dispatched before transactions committed in places. Either way, reactions could be lost or could happen for rolled-back work.
+Two event bugs are common in Laravel applications (C2): an event store that is written and never read, and plain events dispatched before the transaction commits. Either way, reactions are lost, or happen for work that was rolled back.
 
 Nexo needs reliable reactions to state changes:
 
@@ -90,4 +90,4 @@ Rejected. Unjustified operational weight for a modular monolith.
 
 ## Related
 
-- ADR-0010, ADR-0015, ADR-0016; Phase 0 C2.
+- ADR-0010, ADR-0015, ADR-0016.

@@ -9,13 +9,13 @@
 
 ## Context
 
-Phase 0 finding C3 (critical). The old inventory code:
+Inventory bugs are easy to write and hard to see (C3, critical). Three recur:
 
-- double-subtracted stock on reservation (`quantity` decremented **and** `reserved` incremented, while availability was computed as `quantity − reserved`);
-- ignored the variant on release;
-- never expired reservations.
+- double subtraction on reservation (`quantity` decremented **and** `reserved` incremented, while availability is computed as `quantity − reserved`);
+- releasing a reservation without its variant;
+- reservations that never expire.
 
-Its "concurrency" tests ran on SQLite and passed anyway.
+All three survive "concurrency" tests run on SQLite (ADR-0009).
 
 The brief requires correct behaviour (§10, §11) for:
 
@@ -127,4 +127,4 @@ None (greenfield).
 
 ## Related
 
-- ADR-0015; `lifecycles/inventory.md`; Phase 0 C3.
+- ADR-0015; `lifecycles/inventory.md`.

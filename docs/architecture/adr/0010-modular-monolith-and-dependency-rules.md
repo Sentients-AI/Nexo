@@ -11,10 +11,10 @@
 
 The brief (§5, §9) prefers a modular monolith with explicit boundaries, controlled cross-domain communication and automated dependency checks.
 
-Phase 0 found that the old repository had 29 `app/Domain` folders with free cross-imports:
+Folders alone do not make boundaries. A codebase with many `app/Domain/*` folders and free cross-imports decays in predictable ways:
 
-- a domain-event store nobody consumed;
-- controllers that bypassed state machines.
+- a domain-event store nobody consumes;
+- controllers that bypass state machines because nothing stops them.
 
 `docs/engineering/architecture-guidelines.md` already forbids generic services, repositories that merely wrap Eloquent, and interfaces without a second implementation or test seam.
 
@@ -24,7 +24,7 @@ How is code organised into modules, what may a module depend on, and how is that
 
 ## Decision drivers
 
-- Boundaries a reviewer can see in the directory tree and verify in CI.
+- Boundaries anyone can see in the directory tree and CI verifies on every commit.
 - Pragmatism: Eloquent stays the persistence model, with no purist repository layer.
 - Cross-module calls are explicit and few.
 
@@ -32,7 +32,7 @@ How is code organised into modules, what may a module depend on, and how is that
 
 ### A. Laravel default layout (`app/Models`, `app/Http`, …)
 
-Rejected. There are no visible boundaries, and the old repository's failure mode would come back.
+Rejected. There are no visible boundaries, and nothing stops the decay described above.
 
 ### B. Purist hexagonal design per module (domain entities separate from Eloquent, repositories everywhere)
 
